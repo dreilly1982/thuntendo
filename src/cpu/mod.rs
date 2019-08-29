@@ -27,7 +27,7 @@ pub struct CPU<'a> {
     opcode: u8,
     cycles: u8,
     clock_count: u32,
-    lookup: [(&str, fn(&mut CPU) -> u8, fn(&mut CPU) -> u8, u8); 256]
+    lookup: [(&'static str, fn(&mut CPU) -> u8, fn(&mut CPU) -> u8, u8); 256]
 }
 
 // struct INSTRUCTION {
@@ -149,9 +149,9 @@ impl<'a> CPU<'a> {
 
             self.set_flag(FLAGS::U, true);
             self.pc += 1;
-            self.cycles = self.lookup[self.opcode][3];
-            let additional_cycle1: u8 = self.lookup[self.opcode][2]();
-            let additional_cycle2: u8 = self.lookup[self.opcode][1]();
+            self.cycles = self.lookup[self.opcode as usize].3;
+            let additional_cycle1: u8 = self.lookup[self.opcode as usize].2(self);
+            let additional_cycle2: u8 = self.lookup[self.opcode as usize].1(self);
             self.cycles += additional_cycle1 & additional_cycle2;
             self.set_flag(FLAGS::U, true);
         }
@@ -175,8 +175,182 @@ impl<'a> CPU<'a> {
         }
     }
 
-    fn IMP(&self) -> u8 {
-        self.fetched = self.a;
+    fn IMP<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        x.fetched = x.a;
         0
+    }
+
+    fn IMM<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        x.addr_abs = x.pc;
+        x.pc += 1;
+        return 0;
+    }
+
+    fn ZP0<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        x.addr_abs = x.read(x.pc) as u16;
+        x.pc += 1;
+        x.addr_abs &= 0x00FF;
+        return 0;
+    }
+
+    fn ZPX<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        x.addr_abs = (x.read(x.pc) + x.x) as u16;
+        x.pc += 1;
+        x.addr_abs &= 0x00FF;
+        return 0;
+    }
+
+    fn ZPY<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        x.addr_abs = (x.read(x.pc) + x.y) as u16;
+        return 0;
+    }
+
+    fn REL<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        x.addr_rel = x.read(x.pc) as u16;
+        if (x.addr_rel & 0x80) != 0 {
+            x.addr_rel |= 0xFF00;
+        }
+        return 0;
+    }
+
+    fn ABS<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        let lo = x.read(x.pc) as u16;
+        x.pc += 1;
+        let hi = x.read(x.pc) as u16;
+        x.pc += 1;
+
+        x.addr_abs = (hi << 8) | lo;
+
+        return 0;
+    }
+
+    fn ABX<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        let lo = x.read(x.pc) as u16;
+        x.pc += 1;
+        let hi = x.read(x.pc) as u16;
+        x.pc += 1;
+
+        x.addr_abs = (hi << 8) | lo;
+        x.addr_abs += x.x as u16;
+        if (x.addr_abs & 0xFF00) != (hi << 8) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    fn ABY<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        let lo = x.read(x.pc) as u16;
+        x.pc += 1;
+        let hi = x.read(x.pc) as u16;
+        x.pc += 1;
+
+        x.addr_abs = (hi << 8) | lo;
+        x.addr_abs += x.y as u16;
+
+        if (x.addr_abs & 0xFF00) != (hi << 8) {
+            return 1;
+        } else {
+            return 0;
+        }
+
+    }
+
+    fn IND<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        let ptr_lo = x.read(x.pc) as u16;
+        x.pc += 1;
+        let ptr_hi = x.read(x.pc) as u16;
+        x.pc += 1;
+
+        let ptr = (ptr_hi << 8) | ptr_lo;
+
+        if ptr_lo == 0x00FF {
+            x.addr_abs = ((x.read(ptr & 0xFF00) as u16) << 8) | x.read(ptr + 0) as u16;
+        } else {
+            x.addr_abs = ((x.read(ptr + 1) as u16) << 8) | x.read(ptr + 0) as u16;
+        }
+        return 0;
+    }
+
+    fn IZX<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        let t = x.read(x.pc) as u16;
+        x.pc += 1;
+        let lo = x.read((t + x.x as u16) & 0x00FF) as u16;
+        let hi = x.read((t + x.x as u16 + 1) & 0x00FF) as u16;
+
+        x.addr_abs = (hi << 8) | lo;
+
+        return 0;
+    }
+
+    fn IZY<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        let t = x.read(x.pc) as u16;
+        x.pc += 1;
+
+        let lo = x.read(t & 0x00FF) as u16;
+        let hi = x.read((t + 1) & 0x00FF) as u16;
+
+        x.addr_abs = (hi << 8) | lo;
+        x.addr_abs += x.y as u16;
+
+        if (x.addr_abs & 0xFF00) != (hi << 8) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    fn fetch(&self) {
+        if self.lookup[self.opcode as usize].2 as usize != CPU::IMP as usize {
+            self.fetched = self.read(self.addr_abs);
+        }
+        // return self.fetched;
+    }
+
+    fn ADC<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        x.fetch();
+
+        x.temp = x.a as u16 + x.fetched as u16 + x.get_flag(FLAGS::C) as u16;
+        x.set_flag(FLAGS::C, x.temp > 255);
+        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0);
+        x.set_flag(FLAGS::V, ((!(x.a as u16 ^ x.fetched as u16) & (x.a as u16 ^ x.temp as u16)) & 0x0080) != 0);
+        x.set_flag(FLAGS::N, (x.temp & 0x80) != 0);
+
+        x.a = (x.temp & 0x00FF) as u8;
+        return 1;
+    }
+
+    fn SBC<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        x.fetch();
+
+        let value = x.fetched as u16 ^ 0x00FF;
+        x.temp = x.a as u16 + value + x.get_flag(FLAGS::C) as u16;
+        x.set_flag(FLAGS::C, (x.temp & 0xFF00) != 0);
+        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0);
+        x.set_flag(FLAGS::V, ((x.temp ^ x.a as u16) & (x.temp ^ value) & 0x0080) != 0);
+        x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
+        x.a = (x.temp & 0x0080) as u8;
+        return 1;
+    }
+
+    fn AND<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        x.fetch();
+        x.a &= x.fetched;
+        x.set_flag(FLAGS::Z, x.a == 0x00);
+        x.set_flag(FLAGS::N, (x.a & 0x80) != 0);
+        return 1;
+    }
+
+    fn NOP<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        let rc;
+        match x.opcode {
+            0x1C | 0x3C | 0x5C | 0x7C | 0xDC | 0xFC => rc = 1,
+            _ => rc = 0,
+        }
+        return rc;
+    }
+
+    fn XXX<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        return 0;
     }
 }
