@@ -1,5 +1,5 @@
 pub struct Bus {
-    ram: [u8; 64 * 1024],
+    pub ram: [u8; 64 * 1024],
 }
 
 impl Bus {
@@ -15,7 +15,7 @@ impl Bus {
         }
     }
 
-    pub fn read(&self, addr: u16) -> u8 {
+    pub fn read(&self, addr: u16, read_only: bool) -> u8 {
         if addr >= 0x00 && addr <= 0xFFFF {
             return self.ram[addr as usize];
         }
