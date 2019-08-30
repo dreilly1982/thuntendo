@@ -13,7 +13,7 @@ pub enum FLAGS {
 }
 
 pub struct CPU<'a> {
-    pub bus: &'a mut Bus,
+    pub bus: &'a Bus,
     pub a: u8,
     pub x: u8,
     pub y: u8,
@@ -31,9 +31,9 @@ pub struct CPU<'a> {
 }
 
 impl<'a> CPU<'a> {
-    pub fn new(n: &mut Bus) -> CPU {
+    pub fn new(b: &'a Bus) -> CPU<'a> {
         CPU {
-            bus: n,
+            bus: b,
             a: 0x00,
             x: 0x00,
             y: 0x00,
@@ -308,11 +308,11 @@ impl<'a> CPU<'a> {
         }
     }
 
-    pub fn read(&self, addr: u16) -> u8 {
+    fn read(&self, addr: u16) -> u8 {
         self.bus.read(addr, false)
     }
 
-    pub fn write(&mut self, addr: u16, data: u8) {
+    fn write(&self, addr: u16, data: u8) {
         self.bus.write(addr, data);
     }
 
@@ -399,9 +399,9 @@ impl<'a> CPU<'a> {
 
     fn get_flag(&self, f: FLAGS) -> u8 {
         if self.status & f as u8 > 0 {
-            1
+            return 1;
         } else {
-            0
+            return 0;
         }
     }
 

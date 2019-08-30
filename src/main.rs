@@ -7,19 +7,19 @@ use std::io;
 use std::io::prelude::*;
 
 fn main() -> io::Result<()> {
-    let mut bus = Bus::new();
-    let mut cpu = CPU::new(&mut bus);
+    let bus = Bus::new();
+    let mut cpu = CPU::new(&bus);
     let f = File::open("/Users/edreill/test.txt")?;
 
-    let mut n_offset: usize = 0x8000;
+    let mut n_offset: u16 = 0x8000;
 
     for byte in f.bytes() {
-        cpu.bus.ram[n_offset] = byte.unwrap();
+        bus.write(n_offset, byte.unwrap());
         n_offset += 1;
     }
 
-    cpu.bus.ram[0xFFFC] = 0x00;
-    cpu.bus.ram[0xFFFD] = 0x80;
+    bus.write(0xFFFC, 0x00);
+    bus.write(0xFFFD, 0x80);
 
     cpu.reset();
 
