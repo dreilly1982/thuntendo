@@ -12,7 +12,6 @@ fn main() -> io::Result<()> {
     let f = File::open("/Users/edreill/test.txt")?;
 
     let mut n_offset: usize = 0x8000;
-    let mut inst_count = 0;
 
     for byte in f.bytes() {
         cpu.bus.ram[n_offset] = byte.unwrap();

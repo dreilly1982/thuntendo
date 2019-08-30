@@ -30,13 +30,6 @@ pub struct CPU<'a> {
     lookup: [(&'static str, fn(&mut CPU) -> u8, fn(&mut CPU) -> u8, u8); 256],
 }
 
-// struct INSTRUCTION {
-//     name: &'static str,
-//     operate: fn(&mut CPU) -> u8,
-//     addrmode: fn(&mut CPU) -> u8,
-//     cycles: u8
-// }
-
 impl<'a> CPU<'a> {
     pub fn new(n: &mut Bus) -> CPU {
         CPU {
