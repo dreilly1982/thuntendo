@@ -179,11 +179,11 @@ impl<'a> CPU<'a> {
                 ("???", CPU::NOP, CPU::IMP, 2),
                 ("STA", CPU::STA, CPU::IZX, 6),
                 ("???", CPU::NOP, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("SAX", CPU::SAX, CPU::IZX, 6),
                 ("STY", CPU::STY, CPU::ZP0, 3),
                 ("STA", CPU::STA, CPU::ZP0, 3),
                 ("STX", CPU::STX, CPU::ZP0, 3),
-                ("???", CPU::XXX, CPU::IMP, 3),
+                ("SAX", CPU::SAX, CPU::ZP0, 3),
                 ("DEY", CPU::DEY, CPU::IMP, 2),
                 ("???", CPU::NOP, CPU::IMP, 2),
                 ("TXA", CPU::TXA, CPU::IMP, 2),
@@ -191,7 +191,7 @@ impl<'a> CPU<'a> {
                 ("STY", CPU::STY, CPU::ABS, 4),
                 ("STA", CPU::STA, CPU::ABS, 4),
                 ("STX", CPU::STX, CPU::ABS, 4),
-                ("???", CPU::XXX, CPU::IMP, 4),
+                ("SAX", CPU::SAX, CPU::ABS, 4),
                 ("BCC", CPU::BCC, CPU::REL, 2),
                 ("STA", CPU::STA, CPU::IZY, 6),
                 ("???", CPU::XXX, CPU::IMP, 2),
@@ -199,7 +199,7 @@ impl<'a> CPU<'a> {
                 ("STY", CPU::STY, CPU::ZPX, 4),
                 ("STA", CPU::STA, CPU::ZPX, 4),
                 ("STX", CPU::STX, CPU::ZPY, 4),
-                ("???", CPU::XXX, CPU::IMP, 4),
+                ("SAX", CPU::SAX, CPU::ZPY, 4),
                 ("TYA", CPU::TYA, CPU::IMP, 2),
                 ("STA", CPU::STA, CPU::ABY, 5),
                 ("TXS", CPU::TXS, CPU::IMP, 2),
@@ -211,11 +211,11 @@ impl<'a> CPU<'a> {
                 ("LDY", CPU::LDY, CPU::IMM, 2),
                 ("LDA", CPU::LDA, CPU::IZX, 6),
                 ("LDX", CPU::LDX, CPU::IMM, 2),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("LAX", CPU::LAX, CPU::IZX, 6),
                 ("LDY", CPU::LDY, CPU::ZP0, 3),
                 ("LDA", CPU::LDA, CPU::ZP0, 3),
                 ("LDX", CPU::LDX, CPU::ZP0, 3),
-                ("???", CPU::XXX, CPU::IMP, 3),
+                ("LAX", CPU::LAX, CPU::ZP0, 3),
                 ("TAY", CPU::TAY, CPU::IMP, 2),
                 ("LDA", CPU::LDA, CPU::IMM, 2),
                 ("TAX", CPU::TAX, CPU::IMP, 2),
@@ -223,15 +223,15 @@ impl<'a> CPU<'a> {
                 ("LDY", CPU::LDY, CPU::ABS, 4),
                 ("LDA", CPU::LDA, CPU::ABS, 4),
                 ("LDX", CPU::LDX, CPU::ABS, 4),
-                ("???", CPU::XXX, CPU::IMP, 4),
+                ("LAX", CPU::LAX, CPU::ABS, 4),
                 ("BCS", CPU::BCS, CPU::REL, 2),
                 ("LDA", CPU::LDA, CPU::IZY, 5),
                 ("???", CPU::XXX, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 5),
+                ("LAX", CPU::LAX, CPU::IZY, 5),
                 ("LDY", CPU::LDY, CPU::ZPX, 4),
                 ("LDA", CPU::LDA, CPU::ZPX, 4),
                 ("LDX", CPU::LDX, CPU::ZPY, 4),
-                ("???", CPU::XXX, CPU::IMP, 4),
+                ("LAX", CPU::LAX, CPU::ZPY, 4),
                 ("CLV", CPU::CLV, CPU::IMP, 2),
                 ("LDA", CPU::LDA, CPU::ABY, 4),
                 ("TSX", CPU::TSX, CPU::IMP, 2),
@@ -239,7 +239,7 @@ impl<'a> CPU<'a> {
                 ("LDY", CPU::LDY, CPU::ABX, 4),
                 ("LDA", CPU::LDA, CPU::ABX, 4),
                 ("LDX", CPU::LDX, CPU::ABY, 4),
-                ("???", CPU::XXX, CPU::IMP, 4),
+                ("LAX", CPU::LAX, CPU::ABY, 4),
                 ("CPY", CPU::CPY, CPU::IMM, 2),
                 ("CMP", CPU::CMP, CPU::IZX, 6),
                 ("???", CPU::NOP, CPU::IMP, 2),
@@ -283,7 +283,7 @@ impl<'a> CPU<'a> {
                 ("INX", CPU::INX, CPU::IMP, 2),
                 ("SBC", CPU::SBC, CPU::IMM, 2),
                 ("NOP", CPU::NOP, CPU::IMP, 2),
-                ("???", CPU::SBC, CPU::IMP, 2),
+                ("SBC", CPU::SBC, CPU::IMM, 2),
                 ("CPX", CPU::CPX, CPU::ABS, 4),
                 ("SBC", CPU::SBC, CPU::ABS, 4),
                 ("INC", CPU::INC, CPU::ABS, 6),
@@ -309,7 +309,7 @@ impl<'a> CPU<'a> {
     }
 
     fn read(&self, addr: u16) -> u8 {
-        self.bus.read(addr, false)
+        self.bus.read(addr)
     }
 
     fn write(&self, addr: u16, data: u8) {
@@ -381,10 +381,15 @@ impl<'a> CPU<'a> {
         if self.cycles == 0 {
             self.opcode = self.read(self.pc);
             println!(
-                "{} {} {:02X}",
+                "{:02X} {:01X} {}   A:{:01X} X:{:01X} Y:{:01X} P:{:01X} SP:{:01X}",
+                self.pc,
+                self.opcode,
                 self.lookup[self.opcode as usize].0,
-                self.opcode + 1,
-                self.pc
+                self.a,
+                self.x,
+                self.y,
+                self.status,
+                self.stkp
             );
             self.set_flag(FLAGS::U, true);
             self.pc += 1;
@@ -432,14 +437,14 @@ impl<'a> CPU<'a> {
     }
 
     fn ZPX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.addr_abs = (x.read(x.pc) + x.x) as u16;
+        x.addr_abs = (x.read(x.pc).wrapping_add(x.x)) as u16;
         x.pc += 1;
         x.addr_abs &= 0x00FF;
         return 0;
     }
 
     fn ZPY<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.addr_abs = (x.read(x.pc) + x.y) as u16;
+        x.addr_abs = (x.read(x.pc).wrapping_add(x.y)) as u16;
         x.pc += 1;
         return 0;
     }
@@ -471,7 +476,7 @@ impl<'a> CPU<'a> {
         x.pc += 1;
 
         x.addr_abs = (hi << 8) | lo;
-        x.addr_abs += x.x as u16;
+        x.addr_abs = x.addr_abs.wrapping_add(x.x as u16);
         if (x.addr_abs & 0xFF00) != (hi << 8) {
             return 1;
         } else {
@@ -486,7 +491,7 @@ impl<'a> CPU<'a> {
         x.pc += 1;
 
         x.addr_abs = (hi << 8) | lo;
-        x.addr_abs += x.y as u16;
+        x.addr_abs = x.addr_abs.wrapping_add(x.y as u16);
 
         if (x.addr_abs & 0xFF00) != (hi << 8) {
             return 1;
@@ -527,10 +532,10 @@ impl<'a> CPU<'a> {
         x.pc += 1;
 
         let lo = x.read(t & 0x00FF) as u16;
-        let hi = x.read((t + 1) & 0x00FF) as u16;
+        let hi = x.read((t.wrapping_add(1)) & 0x00FF) as u16;
 
         x.addr_abs = (hi << 8) | lo;
-        x.addr_abs += x.y as u16;
+        x.addr_abs = x.addr_abs.wrapping_add(x.y as u16);
 
         if (x.addr_abs & 0xFF00) != (hi << 8) {
             return 1;
@@ -549,7 +554,9 @@ impl<'a> CPU<'a> {
     fn ADC<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.fetch();
 
-        x.temp = x.a as u16 + x.fetched as u16 + x.get_flag(FLAGS::C) as u16;
+        x.temp = (x.a as u16)
+            .wrapping_add(x.fetched as u16)
+            .wrapping_add(x.get_flag(FLAGS::C) as u16);
         x.set_flag(FLAGS::C, x.temp > 255);
         x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0);
         x.set_flag(
@@ -566,7 +573,9 @@ impl<'a> CPU<'a> {
         x.fetch();
 
         let value = x.fetched as u16 ^ 0x00FF;
-        x.temp = x.a as u16 + value + x.get_flag(FLAGS::C) as u16;
+        x.temp = (x.a as u16)
+            .wrapping_add(value)
+            .wrapping_add(x.get_flag(FLAGS::C) as u16);
         x.set_flag(FLAGS::C, (x.temp & 0xFF00) != 0);
         x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0);
         x.set_flag(
@@ -697,13 +706,16 @@ impl<'a> CPU<'a> {
         x.pc += 1;
 
         x.set_flag(FLAGS::I, true);
-        x.write(0x0100 + x.stkp as u16, ((x.pc >> 8) & 0x00ff) as u8);
+        x.write(
+            (x.stkp as u16).wrapping_add(0x0100),
+            ((x.pc >> 8) & 0x00ff) as u8,
+        );
         x.stkp -= 1;
-        x.write(0x0100 + x.stkp as u16, (x.pc & 0x00FF) as u8);
+        x.write((x.stkp as u16).wrapping_add(0x0100), (x.pc & 0x00FF) as u8);
         x.stkp -= 1;
 
         x.set_flag(FLAGS::B, true);
-        x.write(0x0100 + x.stkp as u16, x.status);
+        x.write((x.stkp as u16).wrapping_add(0x0100), x.status);
         x.stkp += 1;
         x.set_flag(FLAGS::B, false);
 
@@ -761,7 +773,7 @@ impl<'a> CPU<'a> {
 
     fn CMP<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = x.a as u16 - x.fetched as u16;
+        x.temp = (x.a as u16).wrapping_sub(x.fetched as u16);
         x.set_flag(FLAGS::C, x.a >= x.fetched);
         x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x0000);
         x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
@@ -770,7 +782,7 @@ impl<'a> CPU<'a> {
 
     fn CPX<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = x.x as u16 - x.fetched as u16;
+        x.temp = (x.x as u16).wrapping_sub(x.fetched as u16);
         x.set_flag(FLAGS::C, x.x >= x.fetched);
         x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x0000);
         x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
@@ -779,7 +791,7 @@ impl<'a> CPU<'a> {
 
     fn CPY<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = x.y as u16 - x.fetched as u16;
+        x.temp = (x.y as u16).wrapping_sub(x.fetched as u16);
         x.set_flag(FLAGS::C, x.y >= x.fetched);
         x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x0000);
         x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
@@ -788,7 +800,7 @@ impl<'a> CPU<'a> {
 
     fn DEC<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = x.fetched as u16 - 1;
+        x.temp = (x.fetched as u16).wrapping_sub(1);
         x.write(x.addr_abs, (x.temp & 0x00FF) as u8);
         x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x0000);
         x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
@@ -796,14 +808,14 @@ impl<'a> CPU<'a> {
     }
 
     fn DEX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.x -= 1;
+        x.x = x.x.wrapping_sub(1);
         x.set_flag(FLAGS::Z, x.x == 0x00);
         x.set_flag(FLAGS::N, (x.x & 0x80) != 0);
         return 0;
     }
 
     fn DEY<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.y -= 1;
+        x.y = x.y.wrapping_sub(1);
         x.set_flag(FLAGS::Z, x.y == 0x00);
         x.set_flag(FLAGS::N, (x.y & 0x80) != 0);
         return 0;
@@ -819,7 +831,7 @@ impl<'a> CPU<'a> {
 
     fn INC<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = (x.fetched + 1) as u16;
+        x.temp = (x.fetched.wrapping_add(1)) as u16;
         x.write(x.addr_abs, (x.temp & 0x00FF) as u8);
         x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x00);
         x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
@@ -827,14 +839,14 @@ impl<'a> CPU<'a> {
     }
 
     fn INX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.x += 1;
+        x.x = x.x.wrapping_add(1);
         x.set_flag(FLAGS::Z, x.x == 0x00);
         x.set_flag(FLAGS::N, (x.x & 0x80) != 0);
         return 0;
     }
 
     fn INY<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.y += 1;
+        x.y = x.y.wrapping_add(1);
         x.set_flag(FLAGS::Z, x.y == 0x00);
         x.set_flag(FLAGS::N, (x.y & 0x80) != 0);
         return 0;
@@ -848,11 +860,20 @@ impl<'a> CPU<'a> {
     fn JSR<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.pc -= 1;
         x.write(0x0100 + x.stkp as u16, ((x.pc >> 8) & 0x00FF) as u8);
-        x.stkp -= 1;
+        x.stkp = x.stkp.wrapping_sub(1);
         x.write(0x0100 + x.stkp as u16, (x.pc & 0x00FF) as u8);
-        x.stkp -= 1;
+        x.stkp = x.stkp.wrapping_sub(1);
 
         x.pc = x.addr_abs;
+        return 0;
+    }
+
+    fn LAX<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        x.fetch();
+        x.a = x.fetched;
+        x.x = x.a;
+        x.set_flag(FLAGS::Z, x.a == 0x00);
+        x.set_flag(FLAGS::N, (x.a & 0x80) != 0);
         return 0;
     }
 
@@ -912,25 +933,25 @@ impl<'a> CPU<'a> {
     }
 
     fn PHA<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.write(0x0100 + x.stkp as u16, x.a);
-        x.stkp -= 1;
+        x.write((x.stkp as u16).wrapping_add(0x0100), x.a);
+        x.stkp = x.stkp.wrapping_sub(1);
         return 0;
     }
 
     fn PHP<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.write(
-            0x0100 + x.stkp as u16,
+            (x.stkp as u16).wrapping_add(0x0100),
             x.status | FLAGS::B as u8 | FLAGS::U as u8,
         );
         x.set_flag(FLAGS::B, false);
         x.set_flag(FLAGS::U, false);
-        x.stkp -= 1;
+        x.stkp = x.stkp.wrapping_sub(1);
         return 0;
     }
 
     fn PLA<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.stkp += 1;
-        x.a = x.read(0x0100 + x.stkp as u16);
+        x.stkp = x.stkp.wrapping_add(1);
+        x.a = x.read((x.stkp as u16).wrapping_add(0x0100));
         x.set_flag(FLAGS::Z, x.a == 0x00);
         x.set_flag(FLAGS::N, (x.a & 0x80) != 0);
         return 0;
@@ -938,7 +959,7 @@ impl<'a> CPU<'a> {
 
     fn PLP<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.stkp += 1;
-        x.status = x.read(0x0100 + x.stkp as u16);
+        x.status = x.read((x.stkp as u16).wrapping_add(0x100));
         x.set_flag(FLAGS::U, true);
         return 0;
     }
@@ -972,25 +993,30 @@ impl<'a> CPU<'a> {
     }
 
     fn RTI<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.stkp += 1;
-        x.status = x.read(0x0100 + x.stkp as u16);
+        x.stkp = x.stkp.wrapping_add(1);
+        x.status = x.read((x.stkp as u16).wrapping_add(0x0100));
         x.status &= !(FLAGS::B as u8);
         x.status &= !(FLAGS::U as u8);
 
-        x.stkp += 1;
-        x.pc = x.read(0x0100 + x.stkp as u16) as u16;
-        x.stkp += 1;
-        x.pc |= (x.read(0x0100 + x.stkp as u16) as u16) << 8;
+        x.stkp = x.stkp.wrapping_add(1);
+        x.pc = x.read((x.stkp as u16).wrapping_add(0x0100)) as u16;
+        x.stkp = x.stkp.wrapping_add(1);
+        x.pc |= (x.read((x.stkp as u16).wrapping_add(0x0100)) as u16) << 8;
         return 0;
     }
 
     fn RTS<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.stkp += 1;
-        x.pc = x.read(0x0100 + x.stkp as u16) as u16;
-        x.stkp += 1;
-        x.pc |= (x.read(0x0100 + x.stkp as u16) as u16) << 8;
+        x.stkp = x.stkp.wrapping_add(1);
+        x.pc = x.read((x.stkp as u16).wrapping_add(0x0100)) as u16;
+        x.stkp = x.stkp.wrapping_add(1);
+        x.pc |= (x.read((x.stkp as u16).wrapping_add(0x0100)) as u16) << 8;
 
         x.pc += 1;
+        return 0;
+    }
+
+    fn SAX<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        x.write(x.addr_abs, x.a & x.x);
         return 0;
     }
 
