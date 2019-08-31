@@ -12,7 +12,7 @@ fn main() -> io::Result<()> {
     let mut buffer = [0; 24592];
     let f = File::open("/Users/edreill/repo/nes-test-roms/other/nestest.nes")?;
     let mut handle = f.take(24592);
-    handle.read(&mut buffer);
+    handle.read(&mut buffer)?;
 
     // let f = File::open("/Users/edreill/test.txt")?;
 
