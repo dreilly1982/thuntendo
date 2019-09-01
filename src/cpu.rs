@@ -51,43 +51,43 @@ impl<'a> CPU<'a> {
                 ("BRK", CPU::BRK, CPU::IMM, 7),
                 ("ORA", CPU::ORA, CPU::IZX, 6),
                 ("???", CPU::XXX, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 8),
-                ("???", CPU::NOP, CPU::IMP, 3),
+                ("SLO", CPU::SLO, CPU::IZX, 8),
+                ("NOP", CPU::NOP, CPU::ZP0, 3),
                 ("ORA", CPU::ORA, CPU::ZP0, 3),
                 ("ASL", CPU::ASL, CPU::ZP0, 5),
-                ("???", CPU::XXX, CPU::IMP, 5),
+                ("SLO", CPU::SLO, CPU::ZP0, 5),
                 ("PHP", CPU::PHP, CPU::IMP, 3),
                 ("ORA", CPU::ORA, CPU::IMM, 2),
                 ("ASL", CPU::ASL, CPU::IMP, 2),
                 ("???", CPU::XXX, CPU::IMP, 2),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("NOP", CPU::NOP, CPU::ABS, 4),
                 ("ORA", CPU::ORA, CPU::ABS, 4),
                 ("ASL", CPU::ASL, CPU::ABS, 6),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("SLO", CPU::SLO, CPU::ABS, 6),
                 ("BPL", CPU::BPL, CPU::REL, 2),
                 ("ORA", CPU::ORA, CPU::IZY, 5),
                 ("???", CPU::XXX, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 8),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("SLO", CPU::SLO, CPU::IZY, 8),
+                ("NOP", CPU::NOP, CPU::ZPX, 4),
                 ("ORA", CPU::ORA, CPU::ZPX, 4),
                 ("ASL", CPU::ASL, CPU::ZPX, 6),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("SLO", CPU::SLO, CPU::ZPX, 6),
                 ("CLC", CPU::CLC, CPU::IMP, 2),
                 ("ORA", CPU::ORA, CPU::ABY, 4),
                 ("???", CPU::NOP, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 7),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("SLO", CPU::SLO, CPU::ABY, 7),
+                ("NOP", CPU::NOP, CPU::ABX, 4),
                 ("ORA", CPU::ORA, CPU::ABX, 4),
                 ("ASL", CPU::ASL, CPU::ABX, 7),
-                ("???", CPU::XXX, CPU::IMP, 7),
+                ("SLO", CPU::SLO, CPU::ABX, 7),
                 ("JSR", CPU::JSR, CPU::ABS, 6),
                 ("AND", CPU::AND, CPU::IZX, 6),
                 ("???", CPU::XXX, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 8),
+                ("RLA", CPU::RLA, CPU::IZX, 8),
                 ("BIT", CPU::BIT, CPU::ZP0, 3),
                 ("AND", CPU::AND, CPU::ZP0, 3),
                 ("ROL", CPU::ROL, CPU::ZP0, 5),
-                ("???", CPU::XXX, CPU::IMP, 5),
+                ("RLA", CPU::RLA, CPU::ZP0, 5),
                 ("PLP", CPU::PLP, CPU::IMP, 4),
                 ("AND", CPU::AND, CPU::IMM, 2),
                 ("ROL", CPU::ROL, CPU::IMP, 2),
@@ -95,31 +95,31 @@ impl<'a> CPU<'a> {
                 ("BIT", CPU::BIT, CPU::ABS, 4),
                 ("AND", CPU::AND, CPU::ABS, 4),
                 ("ROL", CPU::ROL, CPU::ABS, 6),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("RLA", CPU::RLA, CPU::ABS, 6),
                 ("BMI", CPU::BMI, CPU::REL, 2),
                 ("AND", CPU::AND, CPU::IZY, 5),
                 ("???", CPU::XXX, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 8),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("RLA", CPU::RLA, CPU::IZY, 8),
+                ("NOP", CPU::NOP, CPU::ZPX, 4),
                 ("AND", CPU::AND, CPU::ZPX, 4),
                 ("ROL", CPU::ROL, CPU::ZPX, 6),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("RLA", CPU::RLA, CPU::ZPX, 6),
                 ("SEC", CPU::SEC, CPU::IMP, 2),
                 ("AND", CPU::AND, CPU::ABY, 4),
                 ("???", CPU::NOP, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 7),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("RLA", CPU::RLA, CPU::ABY, 7),
+                ("NOP", CPU::NOP, CPU::ABX, 4),
                 ("AND", CPU::AND, CPU::ABX, 4),
                 ("ROL", CPU::ROL, CPU::ABX, 7),
-                ("???", CPU::XXX, CPU::IMP, 7),
+                ("RLA", CPU::RLA, CPU::ABX, 7),
                 ("RTI", CPU::RTI, CPU::IMP, 6),
                 ("EOR", CPU::EOR, CPU::IZX, 6),
                 ("???", CPU::XXX, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 8),
-                ("???", CPU::NOP, CPU::IMP, 3),
+                ("SRE", CPU::SRE, CPU::IZX, 8),
+                ("NOP", CPU::NOP, CPU::ZP0, 3),
                 ("EOR", CPU::EOR, CPU::ZP0, 3),
                 ("LSR", CPU::LSR, CPU::ZP0, 5),
-                ("???", CPU::XXX, CPU::IMP, 5),
+                ("SRE", CPU::SRE, CPU::ZP0, 5),
                 ("PHA", CPU::PHA, CPU::IMP, 3),
                 ("EOR", CPU::EOR, CPU::IMM, 2),
                 ("LSR", CPU::LSR, CPU::IMP, 2),
@@ -127,31 +127,31 @@ impl<'a> CPU<'a> {
                 ("JMP", CPU::JMP, CPU::ABS, 3),
                 ("EOR", CPU::EOR, CPU::ABS, 4),
                 ("LSR", CPU::LSR, CPU::ABS, 6),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("SRE", CPU::SRE, CPU::ABS, 6),
                 ("BVC", CPU::BVC, CPU::REL, 2),
                 ("EOR", CPU::EOR, CPU::IZY, 5),
                 ("???", CPU::XXX, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 8),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("SRE", CPU::SRE, CPU::IZY, 8),
+                ("NOP", CPU::NOP, CPU::ZPX, 4),
                 ("EOR", CPU::EOR, CPU::ZPX, 4),
                 ("LSR", CPU::LSR, CPU::ZPX, 6),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("SRE", CPU::SRE, CPU::ZPX, 6),
                 ("CLI", CPU::CLI, CPU::IMP, 2),
                 ("EOR", CPU::EOR, CPU::ABY, 4),
                 ("???", CPU::NOP, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 7),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("SRE", CPU::SRE, CPU::ABY, 7),
+                ("NOP", CPU::NOP, CPU::ABX, 4),
                 ("EOR", CPU::EOR, CPU::ABX, 4),
                 ("LSR", CPU::LSR, CPU::ABX, 7),
-                ("???", CPU::XXX, CPU::IMP, 7),
+                ("SRE", CPU::SRE, CPU::ABX, 7),
                 ("RTS", CPU::RTS, CPU::IMP, 6),
                 ("ADC", CPU::ADC, CPU::IZX, 6),
                 ("???", CPU::XXX, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 8),
-                ("???", CPU::NOP, CPU::IMP, 3),
+                ("RRA", CPU::RRA, CPU::IZX, 8),
+                ("NOP", CPU::NOP, CPU::ZP0, 3),
                 ("ADC", CPU::ADC, CPU::ZP0, 3),
                 ("ROR", CPU::ROR, CPU::ZP0, 5),
-                ("???", CPU::XXX, CPU::IMP, 5),
+                ("RRA", CPU::RRA, CPU::ZP0, 5),
                 ("PLA", CPU::PLA, CPU::IMP, 4),
                 ("ADC", CPU::ADC, CPU::IMM, 2),
                 ("ROR", CPU::ROR, CPU::IMP, 2),
@@ -159,33 +159,33 @@ impl<'a> CPU<'a> {
                 ("JMP", CPU::JMP, CPU::IND, 5),
                 ("ADC", CPU::ADC, CPU::ABS, 4),
                 ("ROR", CPU::ROR, CPU::ABS, 6),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("RRA", CPU::RRA, CPU::ABS, 6),
                 ("BVS", CPU::BVS, CPU::REL, 2),
                 ("ADC", CPU::ADC, CPU::IZY, 5),
                 ("???", CPU::XXX, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 8),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("RRA", CPU::RRA, CPU::IZY, 8),
+                ("NOP", CPU::NOP, CPU::ZPX, 4),
                 ("ADC", CPU::ADC, CPU::ZPX, 4),
                 ("ROR", CPU::ROR, CPU::ZPX, 6),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("RRA", CPU::RRA, CPU::ZPX, 6),
                 ("SEI", CPU::SEI, CPU::IMP, 2),
                 ("ADC", CPU::ADC, CPU::ABY, 4),
                 ("???", CPU::NOP, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 7),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("RRA", CPU::RRA, CPU::ABY, 7),
+                ("NOP", CPU::NOP, CPU::ABX, 4),
                 ("ADC", CPU::ADC, CPU::ABX, 4),
                 ("ROR", CPU::ROR, CPU::ABX, 7),
-                ("???", CPU::XXX, CPU::IMP, 7),
-                ("???", CPU::NOP, CPU::IMP, 2),
+                ("RRA", CPU::RRA, CPU::ABX, 7),
+                ("NOP", CPU::NOP, CPU::IMM, 2),
                 ("STA", CPU::STA, CPU::IZX, 6),
-                ("???", CPU::NOP, CPU::IMP, 2),
+                ("NOP", CPU::NOP, CPU::IMM, 2),
                 ("SAX", CPU::SAX, CPU::IZX, 6),
                 ("STY", CPU::STY, CPU::ZP0, 3),
                 ("STA", CPU::STA, CPU::ZP0, 3),
                 ("STX", CPU::STX, CPU::ZP0, 3),
                 ("SAX", CPU::SAX, CPU::ZP0, 3),
                 ("DEY", CPU::DEY, CPU::IMP, 2),
-                ("???", CPU::NOP, CPU::IMP, 2),
+                ("NOP", CPU::NOP, CPU::IMM, 2),
                 ("TXA", CPU::TXA, CPU::IMP, 2),
                 ("???", CPU::XXX, CPU::IMP, 2),
                 ("STY", CPU::STY, CPU::ABS, 4),
@@ -242,12 +242,12 @@ impl<'a> CPU<'a> {
                 ("LAX", CPU::LAX, CPU::ABY, 4),
                 ("CPY", CPU::CPY, CPU::IMM, 2),
                 ("CMP", CPU::CMP, CPU::IZX, 6),
-                ("???", CPU::NOP, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 8),
+                ("NOP", CPU::NOP, CPU::IMM, 2),
+                ("DCP", CPU::DCP, CPU::IZX, 8),
                 ("CPY", CPU::CPY, CPU::ZP0, 3),
                 ("CMP", CPU::CMP, CPU::ZP0, 3),
                 ("DEC", CPU::DEC, CPU::ZP0, 5),
-                ("???", CPU::XXX, CPU::IMP, 5),
+                ("DCP", CPU::DCP, CPU::ZP0, 5),
                 ("INY", CPU::INY, CPU::IMP, 2),
                 ("CMP", CPU::CMP, CPU::IMM, 2),
                 ("DEX", CPU::DEX, CPU::IMP, 2),
@@ -255,31 +255,31 @@ impl<'a> CPU<'a> {
                 ("CPY", CPU::CPY, CPU::ABS, 4),
                 ("CMP", CPU::CMP, CPU::ABS, 4),
                 ("DEC", CPU::DEC, CPU::ABS, 6),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("DCP", CPU::DCP, CPU::ABS, 6),
                 ("BNE", CPU::BNE, CPU::REL, 2),
                 ("CMP", CPU::CMP, CPU::IZY, 5),
                 ("???", CPU::XXX, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 8),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("DCP", CPU::DCP, CPU::IZY, 8),
+                ("NOP", CPU::NOP, CPU::ZPX, 4),
                 ("CMP", CPU::CMP, CPU::ZPX, 4),
                 ("DEC", CPU::DEC, CPU::ZPX, 6),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("DCP", CPU::DCP, CPU::ZPX, 6),
                 ("CLD", CPU::CLD, CPU::IMP, 2),
                 ("CMP", CPU::CMP, CPU::ABY, 4),
                 ("NOP", CPU::NOP, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 7),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("DCP", CPU::DCP, CPU::ABY, 7),
+                ("NOP", CPU::NOP, CPU::ABX, 4),
                 ("CMP", CPU::CMP, CPU::ABX, 4),
                 ("DEC", CPU::DEC, CPU::ABX, 7),
-                ("???", CPU::XXX, CPU::IMP, 7),
+                ("DCP", CPU::DCP, CPU::ABX, 7),
                 ("CPX", CPU::CPX, CPU::IMM, 2),
                 ("SBC", CPU::SBC, CPU::IZX, 6),
-                ("???", CPU::NOP, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 8),
+                ("NOP", CPU::NOP, CPU::IMM, 2),
+                ("ISC", CPU::ISC, CPU::IZX, 8),
                 ("CPX", CPU::CPX, CPU::ZP0, 3),
                 ("SBC", CPU::SBC, CPU::ZP0, 3),
                 ("INC", CPU::INC, CPU::ZP0, 5),
-                ("???", CPU::XXX, CPU::IMP, 5),
+                ("ISC", CPU::ISC, CPU::ZP0, 5),
                 ("INX", CPU::INX, CPU::IMP, 2),
                 ("SBC", CPU::SBC, CPU::IMM, 2),
                 ("NOP", CPU::NOP, CPU::IMP, 2),
@@ -287,23 +287,23 @@ impl<'a> CPU<'a> {
                 ("CPX", CPU::CPX, CPU::ABS, 4),
                 ("SBC", CPU::SBC, CPU::ABS, 4),
                 ("INC", CPU::INC, CPU::ABS, 6),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("ISC", CPU::ISC, CPU::ABS, 6),
                 ("BEQ", CPU::BEQ, CPU::REL, 2),
                 ("SBC", CPU::SBC, CPU::IZY, 5),
                 ("???", CPU::XXX, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 8),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("ISC", CPU::ISC, CPU::IZY, 8),
+                ("NOP", CPU::NOP, CPU::ZPX, 4),
                 ("SBC", CPU::SBC, CPU::ZPX, 4),
                 ("INC", CPU::INC, CPU::ZPX, 6),
-                ("???", CPU::XXX, CPU::IMP, 6),
+                ("ISC", CPU::ISC, CPU::ZPX, 6),
                 ("SED", CPU::SED, CPU::IMP, 2),
                 ("SBC", CPU::SBC, CPU::ABY, 4),
                 ("NOP", CPU::NOP, CPU::IMP, 2),
-                ("???", CPU::XXX, CPU::IMP, 7),
-                ("???", CPU::NOP, CPU::IMP, 4),
+                ("ISC", CPU::ISC, CPU::ABY, 7),
+                ("NOP", CPU::NOP, CPU::ABX, 4),
                 ("SBC", CPU::SBC, CPU::ABX, 4),
                 ("INC", CPU::INC, CPU::ABX, 7),
-                ("???", CPU::XXX, CPU::IMP, 7),
+                ("ISC", CPU::ISC, CPU::ABX, 7),
             ],
         }
     }
@@ -327,7 +327,7 @@ impl<'a> CPU<'a> {
         self.x = 0;
         self.y = 0;
         self.stkp = 0xFD;
-        self.status = 0x00 | FLAGS::U as u8;
+        self.status = 0x00 | FLAGS::U as u8 | FLAGS::I as u8;
 
         self.addr_rel = 0x0000;
         self.addr_abs = 0x0000;
@@ -381,7 +381,7 @@ impl<'a> CPU<'a> {
         if self.cycles == 0 {
             self.opcode = self.read(self.pc);
             println!(
-                "{:02X} {:01X} {}   A:{:01X} X:{:01X} Y:{:01X} P:{:01X} SP:{:01X}",
+                "{:04X} {:02X} {}   A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}",
                 self.pc,
                 self.opcode,
                 self.lookup[self.opcode as usize].0,
@@ -396,6 +396,7 @@ impl<'a> CPU<'a> {
             self.cycles = self.lookup[self.opcode as usize].3;
             let additional_cycle1: u8 = self.lookup[self.opcode as usize].2(self);
             let additional_cycle2: u8 = self.lookup[self.opcode as usize].1(self);
+            self.status &= 0xEF;
             self.cycles += additional_cycle1 & additional_cycle2;
             self.set_flag(FLAGS::U, true);
         }
@@ -460,9 +461,9 @@ impl<'a> CPU<'a> {
 
     fn ABS<'r, 's>(x: &mut CPU<'s>) -> u8 {
         let lo = x.read(x.pc) as u16;
-        x.pc += 1;
+        x.pc = x.pc.wrapping_add(1);
         let hi = x.read(x.pc) as u16;
-        x.pc += 1;
+        x.pc = x.pc.wrapping_add(1);
 
         x.addr_abs = (hi << 8) | lo;
 
@@ -573,6 +574,7 @@ impl<'a> CPU<'a> {
         x.fetch();
 
         let value = x.fetched as u16 ^ 0x00FF;
+
         x.temp = (x.a as u16)
             .wrapping_add(value)
             .wrapping_add(x.get_flag(FLAGS::C) as u16);
@@ -583,7 +585,7 @@ impl<'a> CPU<'a> {
             ((x.temp ^ x.a as u16) & (x.temp ^ value) & 0x0080) != 0,
         );
         x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
-        x.a = (x.temp & 0x0080) as u8;
+        x.a = (x.temp & 0x00FF) as u8;
         return 1;
     }
 
@@ -798,6 +800,12 @@ impl<'a> CPU<'a> {
         return 0;
     }
 
+    fn DCP<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        CPU::DEC(x);
+        CPU::CMP(x);
+        return 0;
+    }
+
     fn DEC<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.fetch();
         x.temp = (x.fetched as u16).wrapping_sub(1);
@@ -849,6 +857,12 @@ impl<'a> CPU<'a> {
         x.y = x.y.wrapping_add(1);
         x.set_flag(FLAGS::Z, x.y == 0x00);
         x.set_flag(FLAGS::N, (x.y & 0x80) != 0);
+        return 0;
+    }
+
+    fn ISC<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        CPU::INC(x);
+        CPU::SBC(x);
         return 0;
     }
 
@@ -959,14 +973,14 @@ impl<'a> CPU<'a> {
 
     fn PLP<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.stkp += 1;
-        x.status = x.read((x.stkp as u16).wrapping_add(0x100));
+        x.status = x.read((x.stkp as u16).wrapping_add(0x0100));
         x.set_flag(FLAGS::U, true);
         return 0;
     }
 
     fn ROL<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = (x.fetched << 1) as u16 | x.get_flag(FLAGS::C) as u16;
+        x.temp = ((x.fetched as u16) << 1) | x.get_flag(FLAGS::C) as u16;
         x.set_flag(FLAGS::C, (x.temp & 0xFF00) != 0);
         x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x0000);
         x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
@@ -989,6 +1003,18 @@ impl<'a> CPU<'a> {
         } else {
             x.write(x.addr_abs, (x.temp & 0x00FF) as u8);
         }
+        return 0;
+    }
+
+    fn RLA<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        CPU::ROL(x);
+        CPU::AND(x);
+        return 0;
+    }
+
+    fn RRA<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        CPU::ROR(x);
+        CPU::ADC(x);
         return 0;
     }
 
@@ -1032,6 +1058,19 @@ impl<'a> CPU<'a> {
 
     fn SEI<'r, 's>(x: &mut CPU<'s>) -> u8 {
         x.set_flag(FLAGS::I, true);
+        return 0;
+    }
+
+    fn SLO<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        CPU::ASL(x);
+        CPU::ORA(x);
+
+        return 0;
+    }
+
+    fn SRE<'r, 's>(x: &mut CPU<'s>) -> u8 {
+        CPU::LSR(x);
+        CPU::EOR(x);
         return 0;
     }
 

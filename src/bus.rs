@@ -22,4 +22,14 @@ impl Bus {
         let lock = self.ram.borrow();
         return lock[addr as usize];
     }
+
+    pub fn write_vram(&self, addr: u16, data: u8) {
+        let mut lock = self.vram.borrow_mut();
+        lock[addr as usize] = data;
+    }
+
+    pub fn read_vram(&self, addr: u16) -> u8 {
+        let lock = self.vram.borrow();
+        return lock[addr as usize];
+    }
 }
