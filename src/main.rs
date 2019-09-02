@@ -48,7 +48,7 @@ fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let fname = &args[1];
     let bus = Bus::new();
-    let mut cpu = CPU::new(&bus);
+    let cpu = CPU::new(&bus);
     load_rom(&bus, fname);
 
     cpu.reset();

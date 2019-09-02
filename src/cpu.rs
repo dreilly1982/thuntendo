@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 use crate::bus::Bus;
+use std::sync::RwLock;
 
 pub enum FLAGS {
     C = (1 << 0),
@@ -14,39 +15,39 @@ pub enum FLAGS {
 
 pub struct CPU<'a> {
     pub bus: &'a Bus,
-    pub a: u8,
-    pub x: u8,
-    pub y: u8,
-    pub stkp: u8,
-    pub pc: u16,
-    pub status: u8,
-    fetched: u8,
-    temp: u16,
-    addr_abs: u16,
-    addr_rel: u16,
-    opcode: u8,
-    cycles: u8,
-    pub clock_count: u32,
-    lookup: [(&'static str, fn(&mut CPU) -> u8, fn(&mut CPU) -> u8, u8); 256],
+    pub a: RwLock<u8>,
+    pub x: RwLock<u8>,
+    pub y: RwLock<u8>,
+    pub stkp: RwLock<u8>,
+    pub pc: RwLock<u16>,
+    pub status: RwLock<u8>,
+    fetched: RwLock<u8>,
+    temp: RwLock<u16>,
+    addr_abs: RwLock<u16>,
+    addr_rel: RwLock<u16>,
+    opcode: RwLock<u8>,
+    cycles: RwLock<u8>,
+    pub clock_count: RwLock<u32>,
+    lookup: [(&'static str, fn(&CPU) -> u8, fn(&CPU) -> u8, u8); 256],
 }
 
 impl<'a> CPU<'a> {
     pub fn new(b: &'a Bus) -> CPU<'a> {
         CPU {
             bus: b,
-            a: 0x00,
-            x: 0x00,
-            y: 0x00,
-            stkp: 0x00,
-            pc: 0x0000,
-            status: 0x00,
-            fetched: 0x00,
-            temp: 0x0000,
-            addr_abs: 0x0000,
-            addr_rel: 0x000,
-            opcode: 0x00,
-            cycles: 0,
-            clock_count: 0,
+            a: RwLock::new(0x00),
+            x: RwLock::new(0x00),
+            y: RwLock::new(0x00),
+            stkp: RwLock::new(0x00),
+            pc: RwLock::new(0x0000),
+            status: RwLock::new(0x00),
+            fetched: RwLock::new(0x00),
+            temp: RwLock::new(0x0000),
+            addr_abs: RwLock::new(0x0000),
+            addr_rel: RwLock::new(0x000),
+            opcode: RwLock::new(0x00),
+            cycles: RwLock::new(0),
+            clock_count: RwLock::new(0),
             lookup: [
                 ("BRK", CPU::BRK, CPU::IMM, 7),
                 ("ORA", CPU::ORA, CPU::IZX, 6),
@@ -316,825 +317,966 @@ impl<'a> CPU<'a> {
         self.bus.write(addr, data);
     }
 
-    pub fn reset(&mut self) {
-        self.addr_abs = 0xFFFC;
-        let lo: u16 = self.read(self.addr_abs + 0).into();
-        let hi: u16 = self.read(self.addr_abs + 1).into();
-
-        self.pc = (hi << 8) | lo;
-
-        self.a = 0;
-        self.x = 0;
-        self.y = 0;
-        self.stkp = 0xFD;
-        self.status = 0x00 | FLAGS::U as u8 | FLAGS::I as u8;
-
-        self.addr_rel = 0x0000;
-        self.addr_abs = 0x0000;
-        self.fetched = 0x00;
-
-        self.cycles = 8;
+    fn set_a(&self, val: u8) {
+        let mut lock = self.a.write().unwrap();
+        *lock = val;
     }
 
-    pub fn irq(&mut self) {
+    fn set_x(&self, val: u8) {
+        let mut lock = self.x.write().unwrap();
+        *lock = val;
+    }
+
+    fn set_y(&self, val: u8) {
+        let mut lock = self.y.write().unwrap();
+        *lock = val;
+    }
+
+    fn set_stkp(&self, val: u8) {
+        let mut lock = self.stkp.write().unwrap();
+        *lock = val;
+    }
+
+    fn set_pc(&self, val: u16) {
+        let mut lock = self.pc.write().unwrap();
+        *lock = val;
+    }
+
+    fn set_status(&self, val: u8) {
+        let mut lock = self.status.write().unwrap();
+        *lock = val;
+    }
+
+    fn set_fetched(&self, val: u8) {
+        let mut lock = self.fetched.write().unwrap();
+        *lock = val;
+    }
+
+    fn set_temp(&self, val: u16) {
+        let mut lock = self.temp.write().unwrap();
+        *lock = val;
+    }
+
+    fn set_addr_abs(&self, val: u16) {
+        let mut lock = self.addr_abs.write().unwrap();
+        *lock = val;
+    }
+
+    fn set_addr_rel(&self, val: u16) {
+        let mut lock = self.addr_rel.write().unwrap();
+        *lock = val;
+    }
+
+    fn set_opcode(&self, val: u8) {
+        let mut lock = self.opcode.write().unwrap();
+        *lock = val;
+    }
+
+    fn set_cycles(&self, val: u8) {
+        let mut lock = self.cycles.write().unwrap();
+        *lock = val;
+    }
+
+    fn set_clock_count(&self, val: u32) {
+        let mut lock = self.clock_count.write().unwrap();
+        *lock = val;
+    }
+
+    fn get_a(&self) -> u8 {
+        return *self.a.read().unwrap();
+    }
+
+    fn get_x(&self) -> u8 {
+        return *self.x.read().unwrap();
+    }
+
+    fn get_y(&self) -> u8 {
+        return *self.y.read().unwrap();
+    }
+
+    fn get_stkp(&self) -> u8 {
+        return *self.stkp.read().unwrap();
+    }
+
+    fn get_pc(&self) -> u16 {
+        return *self.pc.read().unwrap();
+    }
+
+    fn get_status(&self) -> u8 {
+        return *self.status.read().unwrap();
+    }
+
+    fn get_fetched(&self) -> u8 {
+        return *self.fetched.read().unwrap();
+    }
+
+    fn get_temp(&self) -> u16 {
+        return *self.temp.read().unwrap();
+    }
+
+    fn get_addr_abs(&self) -> u16 {
+        return *self.addr_abs.read().unwrap();
+    }
+
+    fn get_addr_rel(&self) -> u16 {
+        return *self.addr_rel.read().unwrap();
+    }
+
+    fn get_opcode(&self) -> u8 {
+        return *self.opcode.read().unwrap();
+    }
+
+    fn get_cycles(&self) -> u8 {
+        return *self.cycles.read().unwrap();
+    }
+
+    fn get_clock_count(&self) -> u32 {
+        return *self.clock_count.read().unwrap();
+    }
+
+    pub fn reset(&self) {
+        self.set_addr_abs(0xFFFC);
+        let lo: u16 = self.read(self.get_addr_abs() + 0).into();
+        let hi: u16 = self.read(self.get_addr_abs() + 1).into();
+
+        self.set_pc((hi << 8) | lo);
+
+        self.set_a(0);
+        self.set_x(0);
+        self.set_y(0);
+        self.set_stkp(0xFD);
+        self.set_status(0x00 | FLAGS::U as u8 | FLAGS::I as u8);
+
+        self.set_addr_rel(0x0000);
+        self.set_addr_abs(0x0000);
+        self.set_fetched(0x00);
+
+        self.set_cycles(8);
+    }
+
+    pub fn irq(&self) {
         if self.get_flag(FLAGS::I) == 0 {
-            self.write(0x0100 + self.stkp as u16, ((self.pc >> 8) & 0x00FF) as u8);
-            self.stkp -= 1;
-            self.write(0x0100 + self.stkp as u16, (self.pc & 0x00FF) as u8);
+            self.write(
+                0x0100 + self.get_stkp() as u16,
+                ((self.get_pc() >> 8) & 0x00FF) as u8,
+            );
+            self.set_stkp(self.get_stkp() - 1);
+            self.write(
+                0x0100 + self.get_stkp() as u16,
+                (self.get_pc() & 0x00FF) as u8,
+            );
 
             self.set_flag(FLAGS::B, false);
             self.set_flag(FLAGS::U, true);
             self.set_flag(FLAGS::I, true);
-            self.write(0x100 + self.stkp as u16, self.status);
-            self.stkp -= 1;
+            self.write(0x100 + self.get_stkp() as u16, self.get_status());
+            self.set_stkp(self.get_stkp() - 1);
 
-            self.addr_abs = 0xFFFE;
-            let lo: u16 = self.read(self.addr_abs + 0) as u16;
-            let hi: u16 = self.read(self.addr_abs + 1) as u16;
-            self.pc = (hi << 8) | lo;
+            self.set_addr_abs(0xFFFE);
+            let lo: u16 = self.read(self.get_addr_abs() + 0) as u16;
+            let hi: u16 = self.read(self.get_addr_abs() + 1) as u16;
+            self.set_pc((hi << 8) | lo);
 
-            self.cycles = 7;
+            self.set_cycles(7);
         }
     }
 
-    pub fn nmi(&mut self) {
-        self.write(0x0100 + self.stkp as u16, ((self.pc >> 8) & 0x00FF) as u8);
-        self.stkp -= 1;
-        self.write(0x0100 + self.stkp as u16, (self.pc & 0x00FF) as u8);
+    pub fn nmi(&self) {
+        self.write(
+            0x0100 + self.get_stkp() as u16,
+            ((self.get_pc() >> 8) & 0x00FF) as u8,
+        );
+        self.set_stkp(self.get_stkp() - 1);
+        self.write(
+            0x0100 + self.get_stkp() as u16,
+            (self.get_pc() & 0x00FF) as u8,
+        );
 
         self.set_flag(FLAGS::B, false);
         self.set_flag(FLAGS::U, true);
         self.set_flag(FLAGS::I, true);
-        self.write(0x100 + self.stkp as u16, self.status);
-        self.stkp -= 1;
+        self.write(0x100 + self.get_stkp() as u16, self.get_status());
+        self.set_stkp(self.get_stkp() - 1);
 
-        self.addr_abs = 0xFFFA;
-        let lo: u16 = self.read(self.addr_abs + 0) as u16;
-        let hi: u16 = self.read(self.addr_abs + 1) as u16;
-        self.pc = (hi << 8) | lo;
+        self.set_addr_abs(0xFFFA);
+        let lo: u16 = self.read(self.get_addr_abs() + 0) as u16;
+        let hi: u16 = self.read(self.get_addr_abs() + 1) as u16;
+        self.set_pc((hi << 8) | lo);
 
-        self.cycles = 8;
+        self.set_cycles(8);
     }
 
-    pub fn clock(&mut self) {
-        self.cycles -= 1;
-        if self.cycles == 0 {
-            self.opcode = self.read(self.pc);
+    pub fn clock(&self) {
+        self.set_cycles(self.get_cycles() - 1);
+        if self.get_cycles() == 0 {
+            self.set_opcode(self.read(self.get_pc()));
             println!(
                 "{:04X} {:02X} {}   A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}",
-                self.pc,
-                self.opcode,
-                self.lookup[self.opcode as usize].0,
-                self.a,
-                self.x,
-                self.y,
-                self.status,
-                self.stkp
+                self.get_pc(),
+                self.get_opcode(),
+                self.lookup[self.get_opcode() as usize].0,
+                self.get_a(),
+                self.get_x(),
+                self.get_y(),
+                self.get_status(),
+                self.get_stkp()
             );
             self.set_flag(FLAGS::U, true);
-            self.pc += 1;
-            self.cycles = self.lookup[self.opcode as usize].3;
-            let additional_cycle1: u8 = self.lookup[self.opcode as usize].2(self);
-            let additional_cycle2: u8 = self.lookup[self.opcode as usize].1(self);
-            self.status &= 0xEF;
-            self.cycles += additional_cycle1 & additional_cycle2;
+            self.set_pc(self.get_pc() + 1);
+            self.set_cycles(self.lookup[self.get_opcode() as usize].3);
+            let additional_cycle1: u8 = self.lookup[self.get_opcode() as usize].2(self);
+            let additional_cycle2: u8 = self.lookup[self.get_opcode() as usize].1(self);
+            self.set_status(self.get_status() & 0xEF);
+            self.set_cycles(self.get_cycles() + (additional_cycle1 & additional_cycle2));
             self.set_flag(FLAGS::U, true);
         }
-        self.clock_count += 1;
+        self.set_clock_count(self.get_clock_count() + 1);
     }
 
     fn get_flag(&self, f: FLAGS) -> u8 {
-        if self.status & f as u8 > 0 {
+        if self.get_status() & f as u8 > 0 {
             return 1;
         } else {
             return 0;
         }
     }
 
-    fn set_flag(&mut self, f: FLAGS, v: bool) {
+    fn set_flag(&self, f: FLAGS, v: bool) {
         if v {
-            self.status |= f as u8;
+            self.set_status(self.get_status() | (f as u8));
         } else {
-            self.status &= !(f as u8);
+            self.set_status(self.get_status() & !(f as u8));
         }
     }
 
-    fn IMP<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.fetched = x.a;
+    fn IMP<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_fetched(x.get_a());
         return 0;
     }
 
-    fn IMM<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.addr_abs = x.pc;
-        x.pc += 1;
+    fn IMM<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_addr_abs(x.get_pc());
+        x.set_pc(x.get_pc().wrapping_add(1));
         return 0;
     }
 
-    fn ZP0<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.addr_abs = x.read(x.pc) as u16;
-        x.pc += 1;
-        x.addr_abs &= 0x00FF;
+    fn ZP0<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_addr_abs(x.read(x.get_pc()) as u16);
+        x.set_pc(x.get_pc().wrapping_add(1));
+        x.set_addr_abs(x.get_addr_abs() & 0x00FF);
         return 0;
     }
 
-    fn ZPX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.addr_abs = (x.read(x.pc).wrapping_add(x.x)) as u16;
-        x.pc += 1;
-        x.addr_abs &= 0x00FF;
+    fn ZPX<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_addr_abs((x.read(x.get_pc()).wrapping_add(x.get_x())) as u16);
+        x.set_pc(x.get_pc().wrapping_add(1));
+        x.set_addr_abs(x.get_addr_abs() & 0x00FF);
         return 0;
     }
 
-    fn ZPY<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.addr_abs = (x.read(x.pc).wrapping_add(x.y)) as u16;
-        x.pc += 1;
+    fn ZPY<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_addr_abs((x.read(x.get_pc()).wrapping_add(x.get_y())) as u16);
+        x.set_pc(x.get_pc() + 1);
         return 0;
     }
 
-    fn REL<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.addr_rel = x.read(x.pc) as u16;
-        x.pc += 1;
-        if (x.addr_rel & 0x80) != 0 {
-            x.addr_rel |= 0xFF00;
+    fn REL<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_addr_rel(x.read(x.get_pc()) as u16);
+        x.set_pc(x.get_pc().wrapping_add(1));
+        if (x.get_addr_rel() & 0x80) != 0 {
+            x.set_addr_rel(x.get_addr_rel() | 0xFF00);
         }
         return 0;
     }
 
-    fn ABS<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        let lo = x.read(x.pc) as u16;
-        x.pc = x.pc.wrapping_add(1);
-        let hi = x.read(x.pc) as u16;
-        x.pc = x.pc.wrapping_add(1);
+    fn ABS<'r, 's>(x: &CPU<'s>) -> u8 {
+        let lo = x.read(x.get_pc()) as u16;
+        x.set_pc(x.get_pc().wrapping_add(1));
+        let hi = x.read(x.get_pc()) as u16;
+        x.set_pc(x.get_pc().wrapping_add(1));
 
-        x.addr_abs = (hi << 8) | lo;
+        x.set_addr_abs((hi << 8) | lo);
 
         return 0;
     }
 
-    fn ABX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        let lo = x.read(x.pc) as u16;
-        x.pc += 1;
-        let hi = x.read(x.pc) as u16;
-        x.pc += 1;
+    fn ABX<'r, 's>(x: &CPU<'s>) -> u8 {
+        let lo = x.read(x.get_pc()) as u16;
+        x.set_pc(x.get_pc().wrapping_add(1));
+        let hi = x.read(x.get_pc()) as u16;
+        x.set_pc(x.get_pc().wrapping_add(1));
 
-        x.addr_abs = (hi << 8) | lo;
-        x.addr_abs = x.addr_abs.wrapping_add(x.x as u16);
-        if (x.addr_abs & 0xFF00) != (hi << 8) {
+        x.set_addr_abs((hi << 8) | lo);
+        x.set_addr_abs(x.get_addr_abs().wrapping_add(x.get_x() as u16));
+        if (x.get_addr_abs() & 0xFF00) != (hi << 8) {
             return 1;
         } else {
             return 0;
         }
     }
 
-    fn ABY<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        let lo = x.read(x.pc) as u16;
-        x.pc += 1;
-        let hi = x.read(x.pc) as u16;
-        x.pc += 1;
+    fn ABY<'r, 's>(x: &CPU<'s>) -> u8 {
+        let lo = x.read(x.get_pc()) as u16;
+        x.set_pc(x.get_pc().wrapping_add(1));
+        let hi = x.read(x.get_pc()) as u16;
+        x.set_pc(x.get_pc().wrapping_add(1));
 
-        x.addr_abs = (hi << 8) | lo;
-        x.addr_abs = x.addr_abs.wrapping_add(x.y as u16);
+        x.set_addr_abs((hi << 8) | lo);
+        x.set_addr_abs(x.get_addr_abs().wrapping_add(x.get_y() as u16));
 
-        if (x.addr_abs & 0xFF00) != (hi << 8) {
+        if (x.get_addr_abs() & 0xFF00) != (hi << 8) {
             return 1;
         } else {
             return 0;
         }
     }
 
-    fn IND<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        let ptr_lo = x.read(x.pc) as u16;
-        x.pc += 1;
-        let ptr_hi = x.read(x.pc) as u16;
-        x.pc += 1;
+    fn IND<'r, 's>(x: &CPU<'s>) -> u8 {
+        let ptr_lo = x.read(x.get_pc()) as u16;
+        x.set_pc(x.get_pc().wrapping_add(1));
+        let ptr_hi = x.read(x.get_pc()) as u16;
+        x.set_pc(x.get_pc().wrapping_add(1));
 
         let ptr = (ptr_hi << 8) | ptr_lo;
 
         if ptr_lo == 0x00FF {
-            x.addr_abs = ((x.read(ptr & 0xFF00) as u16) << 8) | x.read(ptr + 0) as u16;
+            x.set_addr_abs(((x.read(ptr & 0xFF00) as u16) << 8) | x.read(ptr + 0) as u16);
         } else {
-            x.addr_abs = ((x.read(ptr + 1) as u16) << 8) | x.read(ptr + 0) as u16;
+            x.set_addr_abs(((x.read(ptr + 1) as u16) << 8) | x.read(ptr + 0) as u16);
         }
         return 0;
     }
 
-    fn IZX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        let t = x.read(x.pc) as u16;
-        x.pc += 1;
-        let lo = x.read((t + x.x as u16) & 0x00FF) as u16;
-        let hi = x.read((t + x.x as u16 + 1) & 0x00FF) as u16;
+    fn IZX<'r, 's>(x: &CPU<'s>) -> u8 {
+        let t = x.read(x.get_pc()) as u16;
+        x.set_pc(x.get_pc().wrapping_add(1));
+        let lo = x.read((t + x.get_x() as u16) & 0x00FF) as u16;
+        let hi = x.read((t + x.get_x() as u16 + 1) & 0x00FF) as u16;
 
-        x.addr_abs = (hi << 8) | lo;
+        x.set_addr_abs((hi << 8) | lo);
 
         return 0;
     }
 
-    fn IZY<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        let t = x.read(x.pc) as u16;
-        x.pc += 1;
+    fn IZY<'r, 's>(x: &CPU<'s>) -> u8 {
+        let t = x.read(x.get_pc()) as u16;
+        x.set_pc(x.get_pc().wrapping_add(1));
 
         let lo = x.read(t & 0x00FF) as u16;
         let hi = x.read((t.wrapping_add(1)) & 0x00FF) as u16;
 
-        x.addr_abs = (hi << 8) | lo;
-        x.addr_abs = x.addr_abs.wrapping_add(x.y as u16);
+        x.set_addr_abs((hi << 8) | lo);
+        x.set_addr_abs(x.get_addr_abs().wrapping_add(x.get_y() as u16));
 
-        if (x.addr_abs & 0xFF00) != (hi << 8) {
+        if (x.get_addr_abs() & 0xFF00) != (hi << 8) {
             return 1;
         } else {
             return 0;
         }
     }
 
-    fn fetch(&mut self) {
-        if self.lookup[self.opcode as usize].2 as usize != CPU::IMP as usize {
-            self.fetched = self.read(self.addr_abs);
+    fn fetch(&self) {
+        if self.lookup[self.get_opcode() as usize].2 as usize != CPU::IMP as usize {
+            self.set_fetched(self.read(self.get_addr_abs()));
         }
         // return self.fetched;
     }
 
-    fn ADC<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn ADC<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
 
-        x.temp = (x.a as u16)
-            .wrapping_add(x.fetched as u16)
-            .wrapping_add(x.get_flag(FLAGS::C) as u16);
-        x.set_flag(FLAGS::C, x.temp > 255);
-        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0);
+        x.set_temp(
+            (x.get_a() as u16)
+                .wrapping_add(x.get_fetched() as u16)
+                .wrapping_add(x.get_flag(FLAGS::C) as u16),
+        );
+        x.set_flag(FLAGS::C, x.get_temp() > 255);
+        x.set_flag(FLAGS::Z, (x.get_temp() & 0x00FF) == 0);
         x.set_flag(
             FLAGS::V,
-            ((!(x.a as u16 ^ x.fetched as u16) & (x.a as u16 ^ x.temp as u16)) & 0x0080) != 0,
+            ((!(x.get_a() as u16 ^ x.get_fetched() as u16)
+                & (x.get_a() as u16 ^ x.get_temp() as u16))
+                & 0x0080)
+                != 0,
         );
-        x.set_flag(FLAGS::N, (x.temp & 0x80) != 0);
+        x.set_flag(FLAGS::N, (x.get_temp() & 0x80) != 0);
 
-        x.a = (x.temp & 0x00FF) as u8;
+        x.set_a((x.get_temp() & 0x00FF) as u8);
         return 1;
     }
 
-    fn SBC<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn SBC<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
 
-        let value = x.fetched as u16 ^ 0x00FF;
+        let value = x.get_fetched() as u16 ^ 0x00FF;
 
-        x.temp = (x.a as u16)
-            .wrapping_add(value)
-            .wrapping_add(x.get_flag(FLAGS::C) as u16);
-        x.set_flag(FLAGS::C, (x.temp & 0xFF00) != 0);
-        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0);
+        x.set_temp(
+            (x.get_a() as u16)
+                .wrapping_add(value)
+                .wrapping_add(x.get_flag(FLAGS::C) as u16),
+        );
+        x.set_flag(FLAGS::C, (x.get_temp() & 0xFF00) != 0);
+        x.set_flag(FLAGS::Z, (x.get_temp() & 0x00FF) == 0);
         x.set_flag(
             FLAGS::V,
-            ((x.temp ^ x.a as u16) & (x.temp ^ value) & 0x0080) != 0,
+            ((x.get_temp() ^ x.get_a() as u16) & (x.get_temp() ^ value) & 0x0080) != 0,
         );
-        x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
-        x.a = (x.temp & 0x00FF) as u8;
+        x.set_flag(FLAGS::N, (x.get_temp() & 0x0080) != 0);
+        x.set_a((x.get_temp() & 0x00FF) as u8);
         return 1;
     }
 
-    fn AND<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn AND<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.a &= x.fetched;
-        x.set_flag(FLAGS::Z, x.a == 0x00);
-        x.set_flag(FLAGS::N, (x.a & 0x80) != 0);
+        x.set_a(x.get_a() & x.get_fetched());
+        x.set_flag(FLAGS::Z, x.get_a() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_a() & 0x80) != 0);
         return 1;
     }
 
-    fn ASL<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn ASL<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = (x.fetched as u16) << 1;
-        x.set_flag(FLAGS::C, (x.temp & 0xFF00) > 0);
-        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x00);
-        x.set_flag(FLAGS::N, (x.temp & 0x80) != 0);
-        if x.lookup[x.opcode as usize].2 as usize == CPU::IMP as usize {
-            x.a = (x.temp & 0x00FF) as u8;
+        x.set_temp((x.get_fetched() as u16) << 1);
+        x.set_flag(FLAGS::C, (x.get_temp() & 0xFF00) > 0);
+        x.set_flag(FLAGS::Z, (x.get_temp() & 0x00FF) == 0x00);
+        x.set_flag(FLAGS::N, (x.get_temp() & 0x80) != 0);
+        if x.lookup[x.get_opcode() as usize].2 as usize == CPU::IMP as usize {
+            x.set_a((x.get_temp() & 0x00FF) as u8);
         } else {
-            x.write(x.addr_abs, (x.temp & 0x00FF) as u8)
+            x.write(x.get_addr_abs(), (x.get_temp() & 0x00FF) as u8)
         }
         return 0;
     }
 
-    fn BCC<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn BCC<'r, 's>(x: &CPU<'s>) -> u8 {
         if x.get_flag(FLAGS::C) == 0 {
-            x.cycles += 1;
-            x.addr_abs = x.pc.wrapping_add(x.addr_rel);
+            x.set_cycles(x.get_cycles() + 1);
+            x.set_addr_abs(x.get_pc().wrapping_add(x.get_addr_rel()));
 
-            if (x.addr_abs & 0xFF00) != (x.pc & 0xFF00) {
-                x.cycles += 1;
+            if (x.get_addr_abs() & 0xFF00) != (x.get_pc() & 0xFF00) {
+                x.set_cycles(x.get_cycles().wrapping_add(1));
             }
 
-            x.pc = x.addr_abs;
+            x.set_pc(x.get_addr_abs());
         }
         return 0;
     }
 
-    fn BCS<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn BCS<'r, 's>(x: &CPU<'s>) -> u8 {
         if x.get_flag(FLAGS::C) == 1 {
-            x.cycles += 1;
-            x.addr_abs = x.pc.wrapping_add(x.addr_rel);
+            x.set_cycles(x.get_cycles().wrapping_add(1));
+            x.set_addr_abs(x.get_pc().wrapping_add(x.get_addr_rel()));
 
-            if (x.addr_abs & 0xFF00) != (x.pc & 0xFF00) {
-                x.cycles += 1;
+            if (x.get_addr_abs() & 0xFF00) != (x.get_pc() & 0xFF00) {
+                x.set_cycles(x.get_cycles().wrapping_add(1));
             }
 
-            x.pc = x.addr_abs;
+            x.set_pc(x.get_addr_abs());
         }
         return 0;
     }
 
-    fn BEQ<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn BEQ<'r, 's>(x: &CPU<'s>) -> u8 {
         if x.get_flag(FLAGS::Z) == 1 {
-            x.cycles += 1;
-            x.addr_abs = x.pc.wrapping_add(x.addr_rel);
+            x.set_cycles(x.get_cycles().wrapping_add(1));
+            x.set_addr_abs(x.get_pc().wrapping_add(x.get_addr_rel()));
 
-            if (x.addr_abs & 0xFF00) != (x.pc & 0xFF00) {
-                x.cycles += 1;
+            if (x.get_addr_abs() & 0xFF00) != (x.get_pc() & 0xFF00) {
+                x.set_cycles(x.get_cycles().wrapping_add(1));
             }
 
-            x.pc = x.addr_abs;
+            x.set_pc(x.get_addr_abs());
         }
         return 0;
     }
 
-    fn BIT<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn BIT<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = (x.a & x.fetched) as u16;
-        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x00);
-        x.set_flag(FLAGS::N, (x.fetched & (1 << 7)) != 0);
-        x.set_flag(FLAGS::V, (x.fetched & (1 << 6)) != 0);
+        x.set_temp((x.get_a() & x.get_fetched()) as u16);
+        x.set_flag(FLAGS::Z, (x.get_temp() & 0x00FF) == 0x00);
+        x.set_flag(FLAGS::N, (x.get_fetched() & (1 << 7)) != 0);
+        x.set_flag(FLAGS::V, (x.get_fetched() & (1 << 6)) != 0);
         return 0;
     }
 
-    fn BMI<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn BMI<'r, 's>(x: &CPU<'s>) -> u8 {
         if x.get_flag(FLAGS::N) == 1 {
-            x.cycles += 1;
-            x.addr_abs = x.pc.wrapping_add(x.addr_rel);
+            x.set_cycles(x.get_cycles().wrapping_add(1));
+            x.set_addr_abs(x.get_pc().wrapping_add(x.get_addr_rel()));
 
-            if (x.addr_abs & 0xFF00) != (x.pc & 0xFF00) {
-                x.cycles += 1;
+            if (x.get_addr_abs() & 0xFF00) != (x.get_pc() & 0xFF00) {
+                x.set_cycles(x.get_cycles().wrapping_add(1));
             }
 
-            x.pc = x.addr_abs;
+            x.set_pc(x.get_addr_abs());
         }
         return 0;
     }
 
-    fn BNE<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn BNE<'r, 's>(x: &CPU<'s>) -> u8 {
         if x.get_flag(FLAGS::Z) == 0 {
-            x.cycles += 1;
-            x.addr_abs = x.pc.wrapping_add(x.addr_rel);
+            x.set_cycles(x.get_cycles().wrapping_add(1));
+            x.set_addr_abs(x.get_pc().wrapping_add(x.get_addr_rel()));
 
-            if (x.addr_abs & 0xFF00) != (x.pc & 0xFF00) {
-                x.cycles += 1;
+            if (x.get_addr_abs() & 0xFF00) != (x.get_pc() & 0xFF00) {
+                x.set_cycles(x.get_cycles().wrapping_add(1));
             }
 
-            x.pc = x.addr_abs;
+            x.set_pc(x.get_addr_abs());
         }
         return 0;
     }
 
-    fn BPL<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn BPL<'r, 's>(x: &CPU<'s>) -> u8 {
         if x.get_flag(FLAGS::N) == 0 {
-            x.cycles += 1;
-            x.addr_abs = x.pc.wrapping_add(x.addr_rel);
+            x.set_cycles(x.get_cycles().wrapping_add(1));
+            x.set_addr_abs(x.get_pc().wrapping_add(x.get_addr_rel()));
 
-            if (x.addr_abs & 0xFF00) != (x.pc & 0xFF00) {
-                x.cycles += 1;
+            if (x.get_addr_abs() & 0xFF00) != (x.get_pc() & 0xFF00) {
+                x.set_cycles(x.get_cycles().wrapping_add(1));
             }
 
-            x.pc = x.addr_abs;
+            x.set_pc(x.get_addr_abs());
         }
         return 0;
     }
 
-    fn BRK<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.pc += 1;
+    fn BRK<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_pc(x.get_pc().wrapping_add(1));
 
         x.set_flag(FLAGS::I, true);
         x.write(
-            (x.stkp as u16).wrapping_add(0x0100),
-            ((x.pc >> 8) & 0x00ff) as u8,
+            (x.get_stkp() as u16).wrapping_add(0x0100),
+            ((x.get_pc() >> 8) & 0x00ff) as u8,
         );
-        x.stkp -= 1;
-        x.write((x.stkp as u16).wrapping_add(0x0100), (x.pc & 0x00FF) as u8);
-        x.stkp -= 1;
+        x.set_stkp(x.get_stkp().wrapping_sub(1));
+        x.write(
+            (x.get_stkp() as u16).wrapping_add(0x0100),
+            (x.get_pc() & 0x00FF) as u8,
+        );
+        x.set_stkp(x.get_stkp().wrapping_sub(1));
 
         x.set_flag(FLAGS::B, true);
-        x.write((x.stkp as u16).wrapping_add(0x0100), x.status);
-        x.stkp += 1;
+        x.write((x.get_stkp() as u16).wrapping_add(0x0100), x.get_status());
+        x.set_stkp(x.get_stkp().wrapping_add(1));
         x.set_flag(FLAGS::B, false);
 
-        x.pc = x.read(0xFFFE) as u16 | ((x.read(0xFFFF) as u16) << 8);
+        x.set_pc(x.read(0xFFFE) as u16 | ((x.read(0xFFFF) as u16) << 8));
         return 0;
     }
 
-    fn BVC<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn BVC<'r, 's>(x: &CPU<'s>) -> u8 {
         if x.get_flag(FLAGS::V) == 0 {
-            x.cycles += 1;
-            x.addr_abs = x.pc.wrapping_add(x.addr_rel);
+            x.set_cycles(x.get_cycles().wrapping_add(1));
+            x.set_addr_abs(x.get_pc().wrapping_add(x.get_addr_rel()));
 
-            if (x.addr_abs & 0xFF00) != (x.pc & 0xFF00) {
-                x.cycles += 1;
+            if (x.get_addr_abs() & 0xFF00) != (x.get_pc() & 0xFF00) {
+                x.set_cycles(x.get_cycles().wrapping_add(1));
             }
 
-            x.pc = x.addr_abs;
+            x.set_pc(x.get_addr_abs());
         }
         return 0;
     }
 
-    fn BVS<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn BVS<'r, 's>(x: &CPU<'s>) -> u8 {
         if x.get_flag(FLAGS::V) == 1 {
-            x.cycles += 1;
-            x.addr_abs = x.pc.wrapping_add(x.addr_rel);
+            x.set_cycles(x.get_cycles().wrapping_add(1));
+            x.set_addr_abs(x.get_pc().wrapping_add(x.get_addr_rel()));
 
-            if (x.addr_abs & 0xFF00) != (x.pc & 0xFF00) {
-                x.cycles += 1;
+            if (x.get_addr_abs() & 0xFF00) != (x.get_pc() & 0xFF00) {
+                x.set_cycles(x.get_cycles().wrapping_add(1));
             }
 
-            x.pc = x.addr_abs;
+            x.set_pc(x.get_addr_abs());
         }
         return 0;
     }
 
-    fn CLC<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn CLC<'r, 's>(x: &CPU<'s>) -> u8 {
         x.set_flag(FLAGS::C, false);
         return 0;
     }
 
-    fn CLD<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn CLD<'r, 's>(x: &CPU<'s>) -> u8 {
         x.set_flag(FLAGS::D, false);
         return 0;
     }
 
-    fn CLI<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn CLI<'r, 's>(x: &CPU<'s>) -> u8 {
         x.set_flag(FLAGS::I, false);
         return 0;
     }
 
-    fn CLV<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn CLV<'r, 's>(x: &CPU<'s>) -> u8 {
         x.set_flag(FLAGS::V, false);
         return 0;
     }
 
-    fn CMP<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn CMP<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = (x.a as u16).wrapping_sub(x.fetched as u16);
-        x.set_flag(FLAGS::C, x.a >= x.fetched);
-        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x0000);
-        x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
+        x.set_temp((x.get_a() as u16).wrapping_sub(x.get_fetched() as u16));
+        x.set_flag(FLAGS::C, x.get_a() >= x.get_fetched());
+        x.set_flag(FLAGS::Z, (x.get_temp() & 0x00FF) == 0x0000);
+        x.set_flag(FLAGS::N, (x.get_temp() & 0x0080) != 0);
         return 1;
     }
 
-    fn CPX<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn CPX<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = (x.x as u16).wrapping_sub(x.fetched as u16);
-        x.set_flag(FLAGS::C, x.x >= x.fetched);
-        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x0000);
-        x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
+        x.set_temp((x.get_x() as u16).wrapping_sub(x.get_fetched() as u16));
+        x.set_flag(FLAGS::C, x.get_x() >= x.get_fetched());
+        x.set_flag(FLAGS::Z, (x.get_temp() & 0x00FF) == 0x0000);
+        x.set_flag(FLAGS::N, (x.get_temp() & 0x0080) != 0);
         return 0;
     }
 
-    fn CPY<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn CPY<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = (x.y as u16).wrapping_sub(x.fetched as u16);
-        x.set_flag(FLAGS::C, x.y >= x.fetched);
-        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x0000);
-        x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
+        x.set_temp((x.get_y() as u16).wrapping_sub(x.get_fetched() as u16));
+        x.set_flag(FLAGS::C, x.get_y() >= x.get_fetched());
+        x.set_flag(FLAGS::Z, (x.get_temp() & 0x00FF) == 0x0000);
+        x.set_flag(FLAGS::N, (x.get_temp() & 0x0080) != 0);
         return 0;
     }
 
-    fn DCP<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn DCP<'r, 's>(x: &CPU<'s>) -> u8 {
         CPU::DEC(x);
         CPU::CMP(x);
         return 0;
     }
 
-    fn DEC<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn DEC<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = (x.fetched as u16).wrapping_sub(1);
-        x.write(x.addr_abs, (x.temp & 0x00FF) as u8);
-        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x0000);
-        x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
+        x.set_temp((x.get_fetched() as u16).wrapping_sub(1));
+        x.write(x.get_addr_abs(), (x.get_temp() & 0x00FF) as u8);
+        x.set_flag(FLAGS::Z, (x.get_temp() & 0x00FF) == 0x0000);
+        x.set_flag(FLAGS::N, (x.get_temp() & 0x0080) != 0);
         return 0;
     }
 
-    fn DEX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.x = x.x.wrapping_sub(1);
-        x.set_flag(FLAGS::Z, x.x == 0x00);
-        x.set_flag(FLAGS::N, (x.x & 0x80) != 0);
+    fn DEX<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_x(x.get_x().wrapping_sub(1));
+        x.set_flag(FLAGS::Z, x.get_x() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_x() & 0x80) != 0);
         return 0;
     }
 
-    fn DEY<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.y = x.y.wrapping_sub(1);
-        x.set_flag(FLAGS::Z, x.y == 0x00);
-        x.set_flag(FLAGS::N, (x.y & 0x80) != 0);
+    fn DEY<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_y(x.get_y().wrapping_sub(1));
+        x.set_flag(FLAGS::Z, x.get_y() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_y() & 0x80) != 0);
         return 0;
     }
 
-    fn EOR<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn EOR<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.a = x.a ^ x.fetched;
-        x.set_flag(FLAGS::Z, x.a == 0x00);
-        x.set_flag(FLAGS::N, (x.a & 0x80) != 0);
+        x.set_a(x.get_a() ^ x.get_fetched());
+        x.set_flag(FLAGS::Z, x.get_a() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_a() & 0x80) != 0);
         return 1;
     }
 
-    fn INC<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn INC<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = (x.fetched.wrapping_add(1)) as u16;
-        x.write(x.addr_abs, (x.temp & 0x00FF) as u8);
-        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x00);
-        x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
+        x.set_temp((x.get_fetched().wrapping_add(1)) as u16);
+        x.write(x.get_addr_abs(), (x.get_temp() & 0x00FF) as u8);
+        x.set_flag(FLAGS::Z, (x.get_temp() & 0x00FF) == 0x00);
+        x.set_flag(FLAGS::N, (x.get_temp() & 0x0080) != 0);
         return 0;
     }
 
-    fn INX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.x = x.x.wrapping_add(1);
-        x.set_flag(FLAGS::Z, x.x == 0x00);
-        x.set_flag(FLAGS::N, (x.x & 0x80) != 0);
+    fn INX<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_x(x.get_x().wrapping_add(1));
+        x.set_flag(FLAGS::Z, x.get_x() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_x() & 0x80) != 0);
         return 0;
     }
 
-    fn INY<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.y = x.y.wrapping_add(1);
-        x.set_flag(FLAGS::Z, x.y == 0x00);
-        x.set_flag(FLAGS::N, (x.y & 0x80) != 0);
+    fn INY<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_y(x.get_y().wrapping_add(1));
+        x.set_flag(FLAGS::Z, x.get_y() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_y() & 0x80) != 0);
         return 0;
     }
 
-    fn ISC<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn ISC<'r, 's>(x: &CPU<'s>) -> u8 {
         CPU::INC(x);
         CPU::SBC(x);
         return 0;
     }
 
-    fn JMP<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.pc = x.addr_abs;
+    fn JMP<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_pc(x.get_addr_abs());
         return 0;
     }
 
-    fn JSR<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.pc -= 1;
-        x.write(0x0100 + x.stkp as u16, ((x.pc >> 8) & 0x00FF) as u8);
-        x.stkp = x.stkp.wrapping_sub(1);
-        x.write(0x0100 + x.stkp as u16, (x.pc & 0x00FF) as u8);
-        x.stkp = x.stkp.wrapping_sub(1);
+    fn JSR<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_pc(x.get_pc() - 1);
+        x.write(
+            0x0100 + x.get_stkp() as u16,
+            ((x.get_pc() >> 8) & 0x00FF) as u8,
+        );
+        x.set_stkp(x.get_stkp().wrapping_sub(1));
+        x.write(0x0100 + x.get_stkp() as u16, (x.get_pc() & 0x00FF) as u8);
+        x.set_stkp(x.get_stkp().wrapping_sub(1));
 
-        x.pc = x.addr_abs;
+        x.set_pc(x.get_addr_abs());
         return 0;
     }
 
-    fn LAX<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn LAX<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.a = x.fetched;
-        x.x = x.a;
-        x.set_flag(FLAGS::Z, x.a == 0x00);
-        x.set_flag(FLAGS::N, (x.a & 0x80) != 0);
+        x.set_a(x.get_fetched());
+        x.set_x(x.get_a());
+        x.set_flag(FLAGS::Z, x.get_a() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_a() & 0x80) != 0);
         return 0;
     }
 
-    fn LDA<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn LDA<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.a = x.fetched;
-        x.set_flag(FLAGS::Z, x.a == 0x00);
-        x.set_flag(FLAGS::N, (x.a & 0x80) != 0);
+        x.set_a(x.get_fetched());
+        x.set_flag(FLAGS::Z, x.get_a() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_a() & 0x80) != 0);
         return 1;
     }
 
-    fn LDX<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn LDX<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.x = x.fetched;
-        x.set_flag(FLAGS::Z, x.x == 0x00);
-        x.set_flag(FLAGS::N, (x.x & 0x80) != 0);
+        x.set_x(x.get_fetched());
+        x.set_flag(FLAGS::Z, x.get_x() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_x() & 0x80) != 0);
         return 1;
     }
 
-    fn LDY<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn LDY<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.y = x.fetched;
-        x.set_flag(FLAGS::Z, x.y == 0x00);
-        x.set_flag(FLAGS::N, (x.y & 0x80) != 0);
+        x.set_y(x.get_fetched());
+        x.set_flag(FLAGS::Z, x.get_y() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_y() & 0x80) != 0);
         return 1;
     }
 
-    fn LSR<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn LSR<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.set_flag(FLAGS::C, (x.fetched & 0x0001) != 0);
-        x.temp = (x.fetched >> 1) as u16;
-        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x0000);
-        x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
-        if x.lookup[x.opcode as usize].2 as usize == CPU::IMP as usize {
-            x.a = (x.temp & 0x00FF) as u8;
+        x.set_flag(FLAGS::C, (x.get_fetched() & 0x0001) != 0);
+        x.set_temp((x.get_fetched() >> 1) as u16);
+        x.set_flag(FLAGS::Z, (x.get_temp() & 0x00FF) == 0x0000);
+        x.set_flag(FLAGS::N, (x.get_temp() & 0x0080) != 0);
+        if x.lookup[x.get_opcode() as usize].2 as usize == CPU::IMP as usize {
+            x.set_a((x.get_temp() & 0x00FF) as u8);
         } else {
-            x.write(x.addr_abs, (x.temp & 0x00FF) as u8);
+            x.write(x.get_addr_abs(), (x.get_temp() & 0x00FF) as u8);
         }
         return 0;
     }
 
-    fn NOP<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn NOP<'r, 's>(x: &CPU<'s>) -> u8 {
         let rc;
-        match x.opcode {
+        match x.get_opcode() {
             0x1C | 0x3C | 0x5C | 0x7C | 0xDC | 0xFC => rc = 1,
             _ => rc = 0,
         }
         return rc;
     }
 
-    fn ORA<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn ORA<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.a = x.a | x.fetched;
-        x.set_flag(FLAGS::Z, x.a == 0x00);
-        x.set_flag(FLAGS::N, (x.a & 0x80) != 0);
+        x.set_a(x.get_a() | x.get_fetched());
+        x.set_flag(FLAGS::Z, x.get_a() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_a() & 0x80) != 0);
         return 1;
     }
 
-    fn PHA<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.write((x.stkp as u16).wrapping_add(0x0100), x.a);
-        x.stkp = x.stkp.wrapping_sub(1);
+    fn PHA<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.write((x.get_stkp() as u16).wrapping_add(0x0100), x.get_a());
+        x.set_stkp(x.get_stkp().wrapping_sub(1));
         return 0;
     }
 
-    fn PHP<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn PHP<'r, 's>(x: &CPU<'s>) -> u8 {
         x.write(
-            (x.stkp as u16).wrapping_add(0x0100),
-            x.status | FLAGS::B as u8 | FLAGS::U as u8,
+            (x.get_stkp() as u16).wrapping_add(0x0100),
+            x.get_status() | FLAGS::B as u8 | FLAGS::U as u8,
         );
         x.set_flag(FLAGS::B, false);
         x.set_flag(FLAGS::U, false);
-        x.stkp = x.stkp.wrapping_sub(1);
+        x.set_stkp(x.get_stkp().wrapping_sub(1));
         return 0;
     }
 
-    fn PLA<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.stkp = x.stkp.wrapping_add(1);
-        x.a = x.read((x.stkp as u16).wrapping_add(0x0100));
-        x.set_flag(FLAGS::Z, x.a == 0x00);
-        x.set_flag(FLAGS::N, (x.a & 0x80) != 0);
+    fn PLA<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_stkp(x.get_stkp().wrapping_add(1));
+        x.set_a(x.read((x.get_stkp() as u16).wrapping_add(0x0100)));
+        x.set_flag(FLAGS::Z, x.get_a() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_a() & 0x80) != 0);
         return 0;
     }
 
-    fn PLP<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.stkp += 1;
-        x.status = x.read((x.stkp as u16).wrapping_add(0x0100));
+    fn PLP<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_stkp(x.get_stkp().wrapping_add(1));
+        x.set_status(x.read((x.get_stkp() as u16).wrapping_add(0x0100)));
         x.set_flag(FLAGS::U, true);
         return 0;
     }
 
-    fn ROL<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn ROL<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = ((x.fetched as u16) << 1) | x.get_flag(FLAGS::C) as u16;
-        x.set_flag(FLAGS::C, (x.temp & 0xFF00) != 0);
-        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x0000);
-        x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
-        if x.lookup[x.opcode as usize].2 as usize == CPU::IMP as usize {
-            x.a = (x.temp & 0x00FF) as u8;
+        x.set_temp(((x.get_fetched() as u16) << 1) | x.get_flag(FLAGS::C) as u16);
+        x.set_flag(FLAGS::C, (x.get_temp() & 0xFF00) != 0);
+        x.set_flag(FLAGS::Z, (x.get_temp() & 0x00FF) == 0x0000);
+        x.set_flag(FLAGS::N, (x.get_temp() & 0x0080) != 0);
+        if x.lookup[x.get_opcode() as usize].2 as usize == CPU::IMP as usize {
+            x.set_a((x.get_temp() & 0x00FF) as u8);
         } else {
-            x.write(x.addr_abs, (x.temp & 0x00FF) as u8);
+            x.write(x.get_addr_abs(), (x.get_temp() & 0x00FF) as u8);
         }
         return 0;
     }
 
-    fn ROR<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn ROR<'r, 's>(x: &CPU<'s>) -> u8 {
         x.fetch();
-        x.temp = (x.get_flag(FLAGS::C) << 7) as u16 | (x.fetched >> 1) as u16;
-        x.set_flag(FLAGS::C, (x.fetched & 0x01) != 0);
-        x.set_flag(FLAGS::Z, (x.temp & 0x00FF) == 0x0000);
-        x.set_flag(FLAGS::N, (x.temp & 0x0080) != 0);
-        if x.lookup[x.opcode as usize].2 as usize == CPU::IMP as usize {
-            x.a = (x.temp & 0x00FF) as u8;
+        x.set_temp((x.get_flag(FLAGS::C) << 7) as u16 | (x.get_fetched() >> 1) as u16);
+        x.set_flag(FLAGS::C, (x.get_fetched() & 0x01) != 0);
+        x.set_flag(FLAGS::Z, (x.get_temp() & 0x00FF) == 0x0000);
+        x.set_flag(FLAGS::N, (x.get_temp() & 0x0080) != 0);
+        if x.lookup[x.get_opcode() as usize].2 as usize == CPU::IMP as usize {
+            x.set_a((x.get_temp() & 0x00FF) as u8);
         } else {
-            x.write(x.addr_abs, (x.temp & 0x00FF) as u8);
+            x.write(x.get_addr_abs(), (x.get_temp() & 0x00FF) as u8);
         }
         return 0;
     }
 
-    fn RLA<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn RLA<'r, 's>(x: &CPU<'s>) -> u8 {
         CPU::ROL(x);
         CPU::AND(x);
         return 0;
     }
 
-    fn RRA<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn RRA<'r, 's>(x: &CPU<'s>) -> u8 {
         CPU::ROR(x);
         CPU::ADC(x);
         return 0;
     }
 
-    fn RTI<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.stkp = x.stkp.wrapping_add(1);
-        x.status = x.read((x.stkp as u16).wrapping_add(0x0100));
-        x.status &= !(FLAGS::B as u8);
-        x.status &= !(FLAGS::U as u8);
+    fn RTI<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_stkp(x.get_stkp().wrapping_add(1));
+        x.set_status(x.read((x.get_stkp() as u16).wrapping_add(0x0100)));
+        x.set_status(x.get_status() & !(FLAGS::B as u8));
+        x.set_status(x.get_status() & !(FLAGS::U as u8));
 
-        x.stkp = x.stkp.wrapping_add(1);
-        x.pc = x.read((x.stkp as u16).wrapping_add(0x0100)) as u16;
-        x.stkp = x.stkp.wrapping_add(1);
-        x.pc |= (x.read((x.stkp as u16).wrapping_add(0x0100)) as u16) << 8;
+        x.set_stkp(x.get_stkp().wrapping_add(1));
+        x.set_pc(x.read((x.get_stkp() as u16).wrapping_add(0x0100)) as u16);
+        x.set_stkp(x.get_stkp().wrapping_add(1));
+        x.set_pc(x.get_pc() | (x.read((x.get_stkp() as u16).wrapping_add(0x0100)) as u16) << 8);
         return 0;
     }
 
-    fn RTS<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.stkp = x.stkp.wrapping_add(1);
-        x.pc = x.read((x.stkp as u16).wrapping_add(0x0100)) as u16;
-        x.stkp = x.stkp.wrapping_add(1);
-        x.pc |= (x.read((x.stkp as u16).wrapping_add(0x0100)) as u16) << 8;
+    fn RTS<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_stkp(x.get_stkp().wrapping_add(1));
+        x.set_pc(x.read((x.get_stkp() as u16).wrapping_add(0x0100)) as u16);
+        x.set_stkp(x.get_stkp().wrapping_add(1));
+        x.set_pc(x.get_pc() | (x.read((x.get_stkp() as u16).wrapping_add(0x0100)) as u16) << 8);
 
-        x.pc += 1;
+        x.set_pc(x.get_pc().wrapping_add(1));
         return 0;
     }
 
-    fn SAX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.write(x.addr_abs, x.a & x.x);
+    fn SAX<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.write(x.get_addr_abs(), x.get_a() & x.get_x());
         return 0;
     }
 
-    fn SEC<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn SEC<'r, 's>(x: &CPU<'s>) -> u8 {
         x.set_flag(FLAGS::C, true);
         return 0;
     }
 
-    fn SED<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn SED<'r, 's>(x: &CPU<'s>) -> u8 {
         x.set_flag(FLAGS::D, true);
         return 0;
     }
 
-    fn SEI<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn SEI<'r, 's>(x: &CPU<'s>) -> u8 {
         x.set_flag(FLAGS::I, true);
         return 0;
     }
 
-    fn SLO<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn SLO<'r, 's>(x: &CPU<'s>) -> u8 {
         CPU::ASL(x);
         CPU::ORA(x);
 
         return 0;
     }
 
-    fn SRE<'r, 's>(x: &mut CPU<'s>) -> u8 {
+    fn SRE<'r, 's>(x: &CPU<'s>) -> u8 {
         CPU::LSR(x);
         CPU::EOR(x);
         return 0;
     }
 
-    fn STA<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.write(x.addr_abs, x.a);
+    fn STA<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.write(x.get_addr_abs(), x.get_a());
         return 0;
     }
 
-    fn STX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.write(x.addr_abs, x.x);
+    fn STX<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.write(x.get_addr_abs(), x.get_x());
         return 0;
     }
 
-    fn STY<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.write(x.addr_abs, x.y);
+    fn STY<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.write(x.get_addr_abs(), x.get_y());
         return 0;
     }
 
-    fn TAX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.x = x.a;
-        x.set_flag(FLAGS::Z, x.x == 0x00);
-        x.set_flag(FLAGS::N, (x.x & 0x80) != 0);
+    fn TAX<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_x(x.get_a());
+        x.set_flag(FLAGS::Z, x.get_x() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_x() & 0x80) != 0);
         return 0;
     }
 
-    fn TAY<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.y = x.a;
-        x.set_flag(FLAGS::Z, x.y == 0x00);
-        x.set_flag(FLAGS::N, (x.y & 0x80) != 0);
+    fn TAY<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_y(x.get_a());
+        x.set_flag(FLAGS::Z, x.get_y() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_y() & 0x80) != 0);
         return 0;
     }
 
-    fn TSX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.x = x.stkp;
-        x.set_flag(FLAGS::Z, x.x == 0x00);
-        x.set_flag(FLAGS::N, (x.x & 0x80) != 0);
+    fn TSX<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_x(x.get_stkp());
+        x.set_flag(FLAGS::Z, x.get_x() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_x() & 0x80) != 0);
         return 0;
     }
 
-    fn TXA<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.a = x.x;
-        x.set_flag(FLAGS::Z, x.x == 0x00);
-        x.set_flag(FLAGS::N, (x.x & 0x80) != 0);
+    fn TXA<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_a(x.get_x());
+        x.set_flag(FLAGS::Z, x.get_x() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_x() & 0x80) != 0);
         return 0;
     }
 
-    fn TXS<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.stkp = x.x;
+    fn TXS<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_stkp(x.get_x());
         return 0;
     }
 
-    fn TYA<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.a = x.y;
-        x.set_flag(FLAGS::Z, x.a == 0x00);
-        x.set_flag(FLAGS::N, (x.a & 0x80) != 0);
+    fn TYA<'r, 's>(x: &CPU<'s>) -> u8 {
+        x.set_a(x.get_y());
+        x.set_flag(FLAGS::Z, x.get_a() == 0x00);
+        x.set_flag(FLAGS::N, (x.get_a() & 0x80) != 0);
         return 0;
     }
 
-    fn XXX<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.cycles = 0;
+    fn XXX<'r, 's>(x: &CPU<'s>) -> u8 {
         return 0;
     }
 
     pub fn complete(&self) -> bool {
-        return self.cycles == 0;
+        return self.get_cycles() == 0;
     }
 }
