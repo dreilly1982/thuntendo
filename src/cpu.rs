@@ -27,7 +27,6 @@ pub struct CPU<'a> {
     addr_rel: RwLock<u16>,
     opcode: RwLock<u8>,
     cycles: RwLock<u8>,
-    pub clock_count: RwLock<u32>,
     lookup: [(&'static str, fn(&CPU) -> u8, fn(&CPU) -> u8, u8); 256],
 }
 
@@ -47,7 +46,6 @@ impl<'a> CPU<'a> {
             addr_rel: RwLock::new(0x000),
             opcode: RwLock::new(0x00),
             cycles: RwLock::new(0),
-            clock_count: RwLock::new(0),
             lookup: [
                 ("BRK", CPU::BRK, CPU::IMM, 7),
                 ("ORA", CPU::ORA, CPU::IZX, 6),
@@ -377,10 +375,10 @@ impl<'a> CPU<'a> {
         *lock = val;
     }
 
-    fn set_clock_count(&self, val: u32) {
-        let mut lock = self.clock_count.write().unwrap();
-        *lock = val;
-    }
+    // fn set_clock_count(&self, val: u32) {
+    //     let mut lock = self.clock_count.write().unwrap();
+    //     *lock = val;
+    // }
 
     fn get_a(&self) -> u8 {
         return *self.a.read().unwrap();
@@ -430,14 +428,14 @@ impl<'a> CPU<'a> {
         return *self.cycles.read().unwrap();
     }
 
-    fn get_clock_count(&self) -> u32 {
-        return *self.clock_count.read().unwrap();
-    }
+    // fn get_clock_count(&self) -> u32 {
+    //     return *self.clock_count.read().unwrap();
+    // }
 
     pub fn reset(&self) {
         self.set_addr_abs(0xFFFC);
-        let lo: u16 = self.read(self.get_addr_abs() + 0).into();
-        let hi: u16 = self.read(self.get_addr_abs() + 1).into();
+        let lo: u16 = self.read(self.get_addr_abs().wrapping_add(0)).into();
+        let hi: u16 = self.read(self.get_addr_abs().wrapping_add(1)).into();
 
         self.set_pc((hi << 8) | lo);
 
@@ -457,24 +455,27 @@ impl<'a> CPU<'a> {
     pub fn irq(&self) {
         if self.get_flag(FLAGS::I) == 0 {
             self.write(
-                0x0100 + self.get_stkp() as u16,
+                (0x0100 as u16).wrapping_add(self.get_stkp() as u16),
                 ((self.get_pc() >> 8) & 0x00FF) as u8,
             );
-            self.set_stkp(self.get_stkp() - 1);
+            self.set_stkp(self.get_stkp().wrapping_sub(1));
             self.write(
-                0x0100 + self.get_stkp() as u16,
+                (0x0100 as u16).wrapping_add(self.get_stkp() as u16),
                 (self.get_pc() & 0x00FF) as u8,
             );
 
             self.set_flag(FLAGS::B, false);
             self.set_flag(FLAGS::U, true);
             self.set_flag(FLAGS::I, true);
-            self.write(0x100 + self.get_stkp() as u16, self.get_status());
-            self.set_stkp(self.get_stkp() - 1);
+            self.write(
+                (0x100 as u16).wrapping_add(self.get_stkp() as u16),
+                self.get_status(),
+            );
+            self.set_stkp(self.get_stkp().wrapping_sub(1));
 
             self.set_addr_abs(0xFFFE);
-            let lo: u16 = self.read(self.get_addr_abs() + 0) as u16;
-            let hi: u16 = self.read(self.get_addr_abs() + 1) as u16;
+            let lo: u16 = self.read(self.get_addr_abs().wrapping_add(0)) as u16;
+            let hi: u16 = self.read(self.get_addr_abs().wrapping_add(1)) as u16;
             self.set_pc((hi << 8) | lo);
 
             self.set_cycles(7);
@@ -483,33 +484,39 @@ impl<'a> CPU<'a> {
 
     pub fn nmi(&self) {
         self.write(
-            0x0100 + self.get_stkp() as u16,
+            (0x0100 as u16).wrapping_add(self.get_stkp() as u16),
             ((self.get_pc() >> 8) & 0x00FF) as u8,
         );
-        self.set_stkp(self.get_stkp() - 1);
+        self.set_stkp(self.get_stkp().wrapping_sub(1));
         self.write(
-            0x0100 + self.get_stkp() as u16,
+            (0x0100 as u16).wrapping_add(self.get_stkp() as u16),
             (self.get_pc() & 0x00FF) as u8,
         );
 
         self.set_flag(FLAGS::B, false);
         self.set_flag(FLAGS::U, true);
         self.set_flag(FLAGS::I, true);
-        self.write(0x100 + self.get_stkp() as u16, self.get_status());
-        self.set_stkp(self.get_stkp() - 1);
+        self.write(
+            (0x100 as u16).wrapping_add(self.get_stkp() as u16),
+            self.get_status(),
+        );
+        self.set_stkp(self.get_stkp().wrapping_sub(1));
 
         self.set_addr_abs(0xFFFA);
-        let lo: u16 = self.read(self.get_addr_abs() + 0) as u16;
-        let hi: u16 = self.read(self.get_addr_abs() + 1) as u16;
+        let lo: u16 = self.read(self.get_addr_abs().wrapping_add(0)) as u16;
+        let hi: u16 = self.read(self.get_addr_abs().wrapping_add(1)) as u16;
         self.set_pc((hi << 8) | lo);
 
         self.set_cycles(8);
     }
 
     pub fn clock(&self) {
-        self.set_cycles(self.get_cycles() - 1);
+        self.set_cycles(self.get_cycles().wrapping_sub(1));
         if self.get_cycles() == 0 {
             self.set_opcode(self.read(self.get_pc()));
+            if self.get_pc() < 0x300 {
+                return;
+            }
             println!(
                 "{:04X} {:02X} {}   A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}",
                 self.get_pc(),
@@ -522,15 +529,17 @@ impl<'a> CPU<'a> {
                 self.get_stkp()
             );
             self.set_flag(FLAGS::U, true);
-            self.set_pc(self.get_pc() + 1);
+            self.set_pc(self.get_pc().wrapping_add(1));
             self.set_cycles(self.lookup[self.get_opcode() as usize].3);
             let additional_cycle1: u8 = self.lookup[self.get_opcode() as usize].2(self);
             let additional_cycle2: u8 = self.lookup[self.get_opcode() as usize].1(self);
             self.set_status(self.get_status() & 0xEF);
-            self.set_cycles(self.get_cycles() + (additional_cycle1 & additional_cycle2));
+            self.set_cycles(
+                self.get_cycles()
+                    .wrapping_add((additional_cycle1 & additional_cycle2)),
+            );
             self.set_flag(FLAGS::U, true);
         }
-        self.set_clock_count(self.get_clock_count() + 1);
     }
 
     fn get_flag(&self, f: FLAGS) -> u8 {
@@ -576,7 +585,7 @@ impl<'a> CPU<'a> {
 
     fn ZPY<'r, 's>(x: &CPU<'s>) -> u8 {
         x.set_addr_abs((x.read(x.get_pc()).wrapping_add(x.get_y())) as u16);
-        x.set_pc(x.get_pc() + 1);
+        x.set_pc(x.get_pc().wrapping_add(1));
         return 0;
     }
 
@@ -640,9 +649,13 @@ impl<'a> CPU<'a> {
         let ptr = (ptr_hi << 8) | ptr_lo;
 
         if ptr_lo == 0x00FF {
-            x.set_addr_abs(((x.read(ptr & 0xFF00) as u16) << 8) | x.read(ptr + 0) as u16);
+            x.set_addr_abs(
+                ((x.read(ptr & 0xFF00) as u16) << 8) | x.read(ptr.wrapping_add(0)) as u16,
+            );
         } else {
-            x.set_addr_abs(((x.read(ptr + 1) as u16) << 8) | x.read(ptr + 0) as u16);
+            x.set_addr_abs(
+                (x.read(ptr.wrapping_add(1)) as u16) << 8 | x.read(ptr.wrapping_add(0)) as u16,
+            );
         }
         return 0;
     }
@@ -650,8 +663,8 @@ impl<'a> CPU<'a> {
     fn IZX<'r, 's>(x: &CPU<'s>) -> u8 {
         let t = x.read(x.get_pc()) as u16;
         x.set_pc(x.get_pc().wrapping_add(1));
-        let lo = x.read((t + x.get_x() as u16) & 0x00FF) as u16;
-        let hi = x.read((t + x.get_x() as u16 + 1) & 0x00FF) as u16;
+        let lo = x.read((t.wrapping_add(x.get_x() as u16)) & 0x00FF) as u16;
+        let hi = x.read((t.wrapping_add(x.get_x() as u16)).wrapping_add(1) & 0x00FF) as u16;
 
         x.set_addr_abs((hi << 8) | lo);
 
@@ -750,7 +763,7 @@ impl<'a> CPU<'a> {
 
     fn BCC<'r, 's>(x: &CPU<'s>) -> u8 {
         if x.get_flag(FLAGS::C) == 0 {
-            x.set_cycles(x.get_cycles() + 1);
+            x.set_cycles(x.get_cycles().wrapping_add(1));
             x.set_addr_abs(x.get_pc().wrapping_add(x.get_addr_rel()));
 
             if (x.get_addr_abs() & 0xFF00) != (x.get_pc() & 0xFF00) {
@@ -1012,13 +1025,16 @@ impl<'a> CPU<'a> {
     }
 
     fn JSR<'r, 's>(x: &CPU<'s>) -> u8 {
-        x.set_pc(x.get_pc() - 1);
+        x.set_pc(x.get_pc().wrapping_sub(1));
         x.write(
-            0x0100 + x.get_stkp() as u16,
+            (0x0100 as u16).wrapping_add(x.get_stkp() as u16),
             ((x.get_pc() >> 8) & 0x00FF) as u8,
         );
         x.set_stkp(x.get_stkp().wrapping_sub(1));
-        x.write(0x0100 + x.get_stkp() as u16, (x.get_pc() & 0x00FF) as u8);
+        x.write(
+            (0x0100 as u16).wrapping_add(x.get_stkp() as u16),
+            (x.get_pc() & 0x00FF) as u8,
+        );
         x.set_stkp(x.get_stkp().wrapping_sub(1));
 
         x.set_pc(x.get_addr_abs());
