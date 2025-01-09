@@ -1,3 +1,4 @@
+#![allow(unused)] // clear warning for chr_banks
 use crate::mappers::mapper::Mapper;
 
 pub struct Mapper000 {

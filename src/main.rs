@@ -5,7 +5,6 @@ mod mappers;
 mod ppu;
 use nes::NES;
 use std::env;
-use std::io;
 
 use pixels::{Error, Pixels, SurfaceTexture};
 use std::time::{Duration, Instant};

@@ -57,11 +57,10 @@ impl Cartridge {
                 _ => panic!("INVALID MAPPER")
             }
         };
-        let mirror = (header[6] >> 3) & 1;
-        println!("Mirror: {}", mirror);
+        let mirror = header[6] & 1;
         let mirroring = match mirror {
-            1 => MIRROR::HORIZONTAL,
-            0 => MIRROR::VERTICAL,
+            0 => MIRROR::HORIZONTAL,
+            1 => MIRROR::VERTICAL,
             _ => panic!("INVALID MIRRORING")
         };
         Cartridge {

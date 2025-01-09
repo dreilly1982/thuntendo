@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use crate::cartridge::Cartridge;
 use crate::cpu::CPU;
-use crate::ppu::{self, PPU};
+use crate::ppu::PPU;
 
 pub struct NES<'a> {
     pub ram: RefCell<[u8; 2048]>,
@@ -125,13 +125,13 @@ impl<'a> NES<'a> {
         *sys_counter += 1;
     }
 
-    pub fn cpu_complete(&self) -> bool {
-        if let Some(cpu) = self.cpu.borrow().as_ref() {
-            cpu.borrow().complete()
-        } else {
-            false
-        }
-    }
+    // pub fn cpu_complete(&self) -> bool {
+    //     if let Some(cpu) = self.cpu.borrow().as_ref() {
+    //         cpu.borrow().complete()
+    //     } else {
+    //         false
+    //     }
+    // }
 
     pub fn insert_cartridge(&self, fname: &str) {
         let cart = Rc::new(RefCell::new(Cartridge::new(fname)));

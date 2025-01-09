@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 use crate::nes::NES;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 pub enum FLAGS {
     C = (1 << 0),
@@ -31,6 +31,20 @@ pub struct CPU<'a> {
     lookup: [(&'static str, fn(&mut CPU) -> u8, fn(&mut CPU) -> u8, u8); 256],
 }
 
+pub fn print_slice_range(cell: &RefCell<[u8]>, start: usize, end: usize) {
+    let slice = cell.borrow();
+    for (i, &byte) in slice[start..=end].iter().enumerate() {
+        if i % 16 == 0 {
+            if i != 0 {
+                println!();
+            }
+            print!("{:04X}: ", start + i);
+        }
+        print!("{:02X} ", byte);
+    }
+    println!("\n\n\n\n");
+}
+
 impl<'a> CPU<'a> {
     pub fn new(b: Rc<NES<'a>>) -> CPU<'a> {
         CPU {
@@ -49,7 +63,7 @@ impl<'a> CPU<'a> {
             cycles: 0,
             clk_count: 0,
             lookup: [
-                ("BRK", CPU::BRK, CPU::IMM, 7),
+                ("BRK", CPU::BRK, CPU::IMP, 7),
                 ("ORA", CPU::ORA, CPU::IZX, 6),
                 ("NOP", CPU::XXX, CPU::IMP, 2),
                 ("SLO", CPU::SLO, CPU::IZX, 8),
@@ -491,6 +505,7 @@ impl<'a> CPU<'a> {
             (0x0100 as u16).wrapping_add(self.get_stkp() as u16),
             (self.get_pc() & 0x00FF) as u8,
         );
+        self.set_stkp(self.get_stkp().wrapping_sub(1));
 
         self.set_flag(FLAGS::B, false);
         self.set_flag(FLAGS::U, true);
@@ -516,24 +531,21 @@ impl<'a> CPU<'a> {
             if self.get_pc() < 0x300 {
                 return;
             }
-            println!(
-                "{:04X} {:02X} {}   A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} CYC:{}",
-                self.get_pc(),
-                self.get_opcode(),
-                self.lookup[self.get_opcode() as usize].0,
-                self.get_a(),
-                self.get_x(),
-                self.get_y(),
-                self.get_status(),
-                self.get_stkp(),
-                self.get_clock_count()
-            );
+            // println!(
+            //     "{:04X} {:02X} {}   A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} CYC:{}",
+            //     self.get_pc(),
+            //     self.get_opcode(),
+            //     self.lookup[self.get_opcode() as usize].0,
+            //     self.get_a(),
+            //     self.get_x(),
+            //     self.get_y(),
+            //     self.get_status(),
+            //     self.get_stkp(),
+            //     self.get_clock_count()
+            // );
+            // print_slice_range(&self.bus.ram, 0x100, 0x1FF);
             self.set_flag(FLAGS::U, true);
-            let old_pc = self.get_pc();
             self.set_pc(self.get_pc().wrapping_add(1));
-            // if self.get_pc() < 0x7000 {
-            //     println!("Old PC: {:04X} New PC: {:04X}", old_pc, self.get_pc());
-            // }
             self.set_cycles(self.lookup[self.get_opcode() as usize].3);
             let additional_cycle1: u8 = self.lookup[self.get_opcode() as usize].2(self);
             let additional_cycle2: u8 = self.lookup[self.get_opcode() as usize].1(self);
@@ -543,7 +555,7 @@ impl<'a> CPU<'a> {
                     .wrapping_add(additional_cycle1 & additional_cycle2),
             );
             self.set_flag(FLAGS::U, true);
-        }
+        } 
     }
 
     fn get_flag(&self, f: FLAGS) -> u8 {
@@ -859,7 +871,7 @@ impl<'a> CPU<'a> {
     }
 
     fn BRK<'r, 's>(x: &mut CPU<'s>) -> u8 {
-        x.set_pc(x.get_pc().wrapping_add(1));
+        x.set_pc(x.get_pc().wrapping_add(2));
 
         x.set_flag(FLAGS::I, true);
         x.write(
@@ -1296,7 +1308,7 @@ impl<'a> CPU<'a> {
         return 0;
     }
 
-    pub fn complete(&self) -> bool {
-        return self.get_cycles() == 0;
-    }
+    // pub fn complete(&self) -> bool {
+    //     return self.get_cycles() == 0;
+    // }
 }

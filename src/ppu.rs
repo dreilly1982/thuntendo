@@ -3,10 +3,7 @@ use crate::cartridge::{Cartridge, MIRROR};
 use crate::WIDTH;
 use crate::HEIGHT;
 use std::cell::RefCell;
-use std::os::macos::raw::stat;
-use std::panic;
 use std::rc::Rc;
-use rand::Rng;
 use bitflags::bitflags;
 
 bitflags! {
@@ -599,7 +596,7 @@ impl<'a> PPU<'a> {
                 self.bg_next_tile_id = self.ppu_read(0x2000 | (self.vram_addr.reg & 0x0FFF));
             }
 
-            if (self.scanline == -1) && (self.cycle >= 280 && self.cycle < 305) {
+            if self.scanline == -1 && self.cycle >= 280 && self.cycle < 305 {
                 self.transfer_address_y();
             }
         }
