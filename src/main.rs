@@ -3,6 +3,7 @@ mod cpu;
 mod cartridge;
 mod mappers;
 mod ppu;
+mod apu;
 use nes::NES;
 use std::env;
 
@@ -15,8 +16,18 @@ use winit::{
     window::WindowBuilder,
 };
 
+use crossterm::{
+    cursor,
+    execute,
+    terminal::{Clear, ClearType},
+};
+
+use std::io::{stdout, Write};
+
 const WIDTH: u32 = 256;
 const HEIGHT: u32 = 240;
+
+
 
 fn main() -> Result<(), Error> {
     let args: Vec<String> = env::args().collect();
@@ -24,6 +35,8 @@ fn main() -> Result<(), Error> {
     let bus = NES::new();
     let mut system_counter: u32 = 0;
     bus.insert_cartridge(fname);
+
+    
 
     bus.reset(&mut system_counter);
 
@@ -47,6 +60,7 @@ fn main() -> Result<(), Error> {
 
     let target_frame_time = Duration::from_secs_f64(1.0/60.0);
     let mut last_frame_time = Instant::now();
+    // bus.set_sample_frequency(44100);
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
@@ -66,10 +80,68 @@ fn main() -> Result<(), Error> {
                             VirtualKeyCode::Q => {
                                 *control_flow = ControlFlow::Exit;
                             }
+                            VirtualKeyCode::X => {
+                                bus.controller.borrow_mut()[0] |= 0x80;
+                            }
+                            VirtualKeyCode::Z => {
+                                bus.controller.borrow_mut()[0] |= 0x40;
+                            }
+                            VirtualKeyCode::A => {
+                                bus.controller.borrow_mut()[0] |= 0x20;
+                            }
+                            VirtualKeyCode::S => {
+                                bus.controller.borrow_mut()[0] |= 0x10;
+                            }
+                            VirtualKeyCode::Up => {
+                                bus.controller.borrow_mut()[0] |= 0x08;
+                            }
+                            VirtualKeyCode::Down => {
+                                bus.controller.borrow_mut()[0] |= 0x04;
+                            }
+                            VirtualKeyCode::Left => {
+                                bus.controller.borrow_mut()[0] |= 0x02;
+                            }
+                            VirtualKeyCode::Right => {
+                                bus.controller.borrow_mut()[0] |= 0x01;
+                            }
+                            _ => (),
+                        }
+                    } else if let KeyboardInput {
+                        state: ElementState::Released,
+                        virtual_keycode: Some(key),
+                        ..
+                    } = input
+                    {
+                        match key {
+                            VirtualKeyCode::X => {
+                                bus.controller.borrow_mut()[0] &= 0x7F;
+                            }
+                            VirtualKeyCode::Z => {
+                                bus.controller.borrow_mut()[0] &= 0xBF;
+                            }
+                            VirtualKeyCode::A => {
+                                bus.controller.borrow_mut()[0] &= 0xDF;
+                            }
+                            VirtualKeyCode::S => {
+                                bus.controller.borrow_mut()[0] &= 0xEF;
+                            }
+                            VirtualKeyCode::Up => {
+                                bus.controller.borrow_mut()[0] &= 0xF7;
+                            }
+                            VirtualKeyCode::Down => {
+                                bus.controller.borrow_mut()[0] &= 0xFB;
+                            }
+                            VirtualKeyCode::Left => {
+                                bus.controller.borrow_mut()[0] &= 0xFD;
+                            }
+                            VirtualKeyCode::Right => {
+                                bus.controller.borrow_mut()[0] &= 0xFE;
+                            }
                             _ => (),
                         }
                     }
                 }
+                    
                 WindowEvent::CloseRequested => {
                     *control_flow = ControlFlow::Exit;
                 }
@@ -86,6 +158,9 @@ fn main() -> Result<(), Error> {
                 let now = Instant::now();
                 let elapsed = now - last_frame_time;
 
+                let samples_per_frame = 44100 / 60;
+                let mut samples = 0;
+
                 // if !bus.cpu_complete() {
                 //     window.request_redraw();
                 // } else {
@@ -97,14 +172,27 @@ fn main() -> Result<(), Error> {
                 }
 
                 if elapsed >= target_frame_time {
+                    // println!("Elapsed: {:?}", elapsed);
                     window.request_redraw();
                     last_frame_time = now;
                 } else {
                     *control_flow = ControlFlow::WaitUntil(now + target_frame_time - elapsed);
                 }
-            }
+
+                // while samples <= samples_per_frame {
+                //     bus.clock(pixels.frame_mut(), &mut system_counter);
+                //     if *bus.audio_sample_ready.borrow() {
+                //         samples += 1;
+                //     }
+                    
+                // }
+
+                // while !bus.clock(pixels.frame_mut(), &mut system_counter) { }
+                println!("{:?}", elapsed);
+                last_frame_time = now;
+                window.request_redraw();
+            },
             _ => ()
         }
     });
 }
-

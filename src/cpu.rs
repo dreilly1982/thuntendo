@@ -329,6 +329,7 @@ impl<'a> CPU<'a> {
 
     fn write(&self, addr: u16, data: u8) {
         self.bus.cpu_write(addr, data);
+        // self.bus.cpu_write(addr, data);
     }
 
     fn set_a(&mut self, val: u8) {
@@ -543,7 +544,6 @@ impl<'a> CPU<'a> {
             //     self.get_stkp(),
             //     self.get_clock_count()
             // );
-            // print_slice_range(&self.bus.ram, 0x100, 0x1FF);
             self.set_flag(FLAGS::U, true);
             self.set_pc(self.get_pc().wrapping_add(1));
             self.set_cycles(self.lookup[self.get_opcode() as usize].3);
