@@ -1,7 +1,5 @@
-use crate::nes::NES;
 use crate::cartridge::{Cartridge, MIRROR};
-use crate::WIDTH;
-use crate::HEIGHT;
+use crate::utils::consts::{WIDTH, HEIGHT};
 use std::cell::RefCell;
 use std::rc::Rc;
 use bitflags::bitflags;
@@ -96,8 +94,7 @@ impl LoopyRegister {
     pub fn set_bits(&mut self, value: u16) { self.reg = value; }
 }
 
-pub struct PPU<'a> {
-    pub bus: Rc<NES<'a>>,
+pub struct PPU {
     pub cart: RefCell<Option<Rc<RefCell<Cartridge>>>>,
     table_name: [[u8; 1024]; 2],
     table_pattern: [[u8; 4096]; 2],
@@ -134,8 +131,8 @@ pub struct PPU<'a> {
     frame_buffer: [u8; (WIDTH * HEIGHT * 4) as usize],
 }
 
-impl<'a> PPU<'a> {
-    pub fn new(b: Rc<NES<'a>>) -> PPU<'a> {
+impl PPU {
+    pub fn new() -> PPU {
         let screen_palette: [[u8; 4]; 0x40] = [
             [84, 84, 84, 255],
             [0, 30, 116, 255],
@@ -205,7 +202,6 @@ impl<'a> PPU<'a> {
             [0, 0, 0, 255],
             [0, 0, 0, 255]];
         PPU {
-            bus: b,
             cart: RefCell::new(None),
             table_name: [[0; 1024]; 2],
             table_pattern: [[0; 4096]; 2],
@@ -794,7 +790,7 @@ impl<'a> PPU<'a> {
         let index = self.scanline as u32 * WIDTH + self.cycle as u32;
         let shade = self.get_color_from_palette_ram(palette, pixel);
         if self.scanline >= 0 && self.scanline < HEIGHT as i16 {
-            if let Some(pixel) = frame.chunks_exact_mut(4).nth(index as usize) {
+            if let Some(pixel) = self.frame_buffer.chunks_exact_mut(4).nth(index as usize) {
                 pixel.copy_from_slice(&shade);
             }
         }
@@ -808,6 +804,10 @@ impl<'a> PPU<'a> {
                 self.frame_complete = true;
                 // frame.copy_from_slice(&self.frame_buffer);
             }
+        }
+
+        if self.frame_complete {
+            frame.copy_from_slice(&self.frame_buffer);
         }
     }
 

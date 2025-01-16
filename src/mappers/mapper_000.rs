@@ -16,25 +16,27 @@ impl Mapper000 {
 }
 
 impl Mapper for Mapper000{
-    fn cpu_map_read(&self, addr: u16) -> u32 {
+    fn cpu_map_read(&self, addr: u16) -> (u32, bool) {
         match self.prg_banks{
-            1 => addr as u32 & 0x3FFF,
-            _ => addr as u32 & 0x7FFF
+            1 => (addr as u32 & 0x3FFF, true),
+            _ => (addr as u32 & 0x7FFF, true)
         }
     }
 
-    fn cpu_map_write(&self, addr: u16) -> u32 {
+    fn cpu_map_write(&mut self, addr: u16, _: u8) -> (u32, bool) {
         match self.prg_banks {
-            1 => addr as u32 & 0x3FFF,
-            _ => addr as u32 & 0x7FFF
+            1 => (addr as u32 & 0x3FFF, true),
+            _ => (addr as u32 & 0x7FFF, true),
         }
     }
 
-    fn ppu_map_read(&self, addr: u16) -> u32 {
-        addr as u32
+    fn ppu_map_read(&self, addr: u16) -> (u32, bool) {
+        (addr as u32, true)
     }
 
-    fn ppu_map_write(&self, addr: u16) -> u32 {
-        addr as u32
+    fn ppu_map_write(&mut self, addr: u16) -> (u32, bool) {
+        (addr as u32, true)
     }
+
+    fn reset(&mut self) {}
 }

@@ -4,6 +4,7 @@ use std::io::prelude::*;
 
 use crate::mappers::mapper::Mapper;
 use crate::mappers::mapper_000::Mapper000;
+use crate::mappers::mapper_002::Mapper002;
 
 #[derive(PartialEq)]
 pub enum MIRROR {
@@ -54,7 +55,8 @@ impl Cartridge {
         let mapper: Box<dyn Mapper> = {
             match mapper_num {
                 0 => Box::new(Mapper000::new(num_prg_chunks, num_chr_chunks)),
-                _ => panic!("INVALID MAPPER")
+                2 => Box::new(Mapper002::new(num_prg_chunks, num_chr_chunks)),
+                _ => panic!("INVALID MAPPER {}", mapper_num),
             }
         };
         let mirror = header[6] & 1;
@@ -79,22 +81,40 @@ impl Cartridge {
     }
 
     pub fn cpu_read(&self, addr: u16) -> u8 {
-        let mapped_addr = self.mapper.cpu_map_read(addr);
-        self.prg_rom[mapped_addr as usize]
+        let (mapped_addr,allow_read) = self.mapper.cpu_map_read(addr);
+        if allow_read {
+            self.prg_rom[mapped_addr as usize]
+        } else {
+            0
+        }
     }
 
     pub fn cpu_write(&mut self, addr: u16, data: u8) {
-        let mapped_addr = self.mapper.cpu_map_write(addr);
-        self.prg_rom[mapped_addr as usize] = data;
+        let (mapped_addr, allow_write) = self.mapper.cpu_map_write(addr, data);
+        if allow_write {
+            self.prg_rom[mapped_addr as usize] = data;
+        }
     }
 
     pub fn ppu_read(&self, addr: u16) -> Result<u8, &'static str> {
-        let mapped_addr = self.mapper.ppu_map_read(addr);
-        self.chr_rom.get(mapped_addr as usize).copied().ok_or("PPU read error")
+        let (mapped_addr, allow_read) = self.mapper.ppu_map_read(addr);
+        if allow_read {
+            self.chr_rom.get(mapped_addr as usize).copied().ok_or("PPU read error")
+        } else {
+            Ok(0)
+        }
     }
 
     pub fn ppu_write(&mut self, addr: u16, data: u8) -> Result<(), &'static str> {
-        let mapped_addr = self.mapper.ppu_map_write(addr);
-        self.chr_rom.get_mut(mapped_addr as usize).map(|element| *element = data).ok_or("PPU write error")
+        let (mapped_addr, allow_write) = self.mapper.ppu_map_write(addr);
+        if allow_write {
+            self.chr_rom.get_mut(mapped_addr as usize).map(|element| *element = data).ok_or("PPU write error")
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.mapper.reset();
     }
 }

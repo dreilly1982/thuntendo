@@ -532,18 +532,18 @@ impl<'a> CPU<'a> {
             if self.get_pc() < 0x300 {
                 return;
             }
-            // println!(
-            //     "{:04X} {:02X} {}   A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} CYC:{}",
-            //     self.get_pc(),
-            //     self.get_opcode(),
-            //     self.lookup[self.get_opcode() as usize].0,
-            //     self.get_a(),
-            //     self.get_x(),
-            //     self.get_y(),
-            //     self.get_status(),
-            //     self.get_stkp(),
-            //     self.get_clock_count()
-            // );
+            println!(
+                "{:04X} {:02X} {}   A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} CYC:{}",
+                self.get_pc(),
+                self.get_opcode(),
+                self.lookup[self.get_opcode() as usize].0,
+                self.get_a(),
+                self.get_x(),
+                self.get_y(),
+                self.get_status(),
+                self.get_stkp(),
+                self.get_clock_count()
+            );
             self.set_flag(FLAGS::U, true);
             self.set_pc(self.get_pc().wrapping_add(1));
             self.set_cycles(self.lookup[self.get_opcode() as usize].3);
