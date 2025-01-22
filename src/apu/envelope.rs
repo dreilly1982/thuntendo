@@ -29,10 +29,10 @@ impl Envelope {
                         self.decay_count = 15;
                     }
                 } else {
-                    self.decay_count = self.decay_count.wrapping_sub(1);
+                    self.decay_count -= 1;
                 }
             } else {
-                self.divider_count = self.divider_count.wrapping_sub(1);
+                self.divider_count -= 1;
             }
         } else {
             self.start = false;

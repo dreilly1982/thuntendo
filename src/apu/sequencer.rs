@@ -21,7 +21,7 @@ impl Sequencer {
         where T: FnMut(&mut u32) 
     {
         if enable {
-            self.timer = self.timer.wrapping_sub(1);
+            self.timer -= 1;
             if self.timer == 0xFFFF {
                 self.timer = self.reload;
                 manip(&mut self.sequence);

@@ -86,9 +86,6 @@ impl LoopyRegister {
     pub fn fine_y(&self) -> u16 { (self.reg >> 12) & 0x0007 }
     pub fn set_fine_y(&mut self, value: u16) { self.reg = (self.reg & !0x7000) | ((value & 0x0007) << 12); }
 
-    pub fn unused(&self) -> bool { (self.reg & 0x8000) != 0 }
-    pub fn set_unused(&mut self, value: bool) { self.reg = (self.reg & !0x8000) | (if value { 0x8000 } else { 0 }); }
-
     // Raw register access
     pub fn bits(&self) -> u16 { self.reg }
     pub fn set_bits(&mut self, value: u16) { self.reg = value; }
@@ -114,7 +111,7 @@ pub struct PPU {
     bg_shifter_pattern_hi: u16,
     bg_shifter_attrib_lo: u16,
     bg_shifter_attrib_hi: u16,
-    status: Status,
+    pub status: Status,
     mask: Mask,
     control: PPUCTRL,
     vram_addr: LoopyRegister,
@@ -527,7 +524,6 @@ impl PPU {
     }
 
     pub fn clock(&mut self, frame: &mut [u8]) {
-
         if self.scanline >= -1 && self.scanline < 240 {
             if self.scanline == 0 && self.cycle == 0 {
                 self.cycle = 1;

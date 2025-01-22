@@ -14,7 +14,7 @@ impl LengthCounter {
         if !enable {
             self.counter = 0;
         } else if !halt && self.counter > 0 {
-            self.counter = self.counter.wrapping_sub(1);
+            self.counter -= 1;
         }
 
         self.counter

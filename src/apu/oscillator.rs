@@ -21,6 +21,7 @@ impl OscillatorPulse {
         let mut a: f32 = 0.0;
         let mut b: f32 = 0.0;
         let p: f32 = self.duty_cycle * 2.0 * PI;
+        // println!("t: {}", t);
 
         let approxsin = |t: f32| {
             let mut j = t * 0.15915;
@@ -28,7 +29,7 @@ impl OscillatorPulse {
             20.785 * j * (j - 0.5) * (j - 1.0)
         };
 
-        for i in 1..self.harmonics as i32 {
+        for i in 1..=self.harmonics as i32 {
             let n = i as f32;
             let c = n * self.frequency * 2.0 * PI * t;
             a += -approxsin(c) / n;

@@ -1,6 +1,7 @@
 pub const WIDTH: u32 = 256;
 pub const HEIGHT: u32 = 240;
-pub const NTSC_CRYSTAL_FREQUENCY: f32 = 5369318.0 / 2.0;
+pub const NTSC_CRYSTAL_FREQUENCY: f32 = 5369318.0;
+pub const MASTER_CLOCK: f32 = 23625000.0 / 11.0;
 
 pub const LENGTH_TABLE: [u8; 32] = [
     10,  254, 20,  2,   40,  4,   80,  6,

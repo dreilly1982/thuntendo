@@ -34,7 +34,7 @@ impl Sweeper {
         let mut changed = false;
 
         if (self.timer == 0) && self.enabled && self.shift > 0 && !self.mute {
-            if *target >= 8 && self.change < 0x7FF {
+            if *target >= 8 && self.change <= 0x7FF {
                 if self.down {
                     *target -= self.change - channel as u16;
                 } else {
@@ -52,7 +52,7 @@ impl Sweeper {
             self.timer -= 1;
         }
 
-        self.mute = (*target < 8) || (*target > 0x7FFF);
+        self.mute = (*target < 8) || (*target > 0x7FF);
 
         changed
     }
